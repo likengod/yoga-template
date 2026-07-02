@@ -1,0 +1,196 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AboutContent {
+  id              String   @id @default(uuid())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  founder_bio     String?
+  founder_image   String?
+  founder_name    String?
+  founder_title   String?
+  hero_image      String?
+  hero_subtitle   String?
+  hero_title      String?
+  mission         String?
+  section_image   String?
+  story           String?
+  values          String?
+  vision          String?
+
+  @@map("about_content")
+}
+
+model Article {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  title      String
+  content    String
+  author     String
+  category   String?
+  excerpt    String?
+  image_url  String?
+  published  Boolean? @default(false)
+  featured   Boolean? @default(false)
+  views      Int?     @default(0)
+
+  @@map("articles")
+}
+
+model Booking {
+  id               String   @id @default(uuid())
+  created_at       DateTime @default(now())
+  name             String
+  email            String
+  phone            String?
+  class_type       String?
+  experience       String?
+  preferred_date   String?
+  preferred_time   String?
+  special_requests String?
+  status           String?  @default("pending")
+
+  @@map("bookings")
+}
+
+model ContactContent {
+  id            String   @id @default(uuid())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  hero_title    String?
+  hero_subtitle String?
+  address       String?
+  email         String?
+  hours         String?
+  phone         String?
+
+  @@map("contact_content")
+}
+
+model GalleryImage {
+  id          String   @id @default(uuid())
+  date        String
+  title       String
+  url         String
+  description String?
+  views       Int?     @default(0)
+
+  @@map("gallery_images")
+}
+
+model PopupSetting {
+  id          String   @id @default(uuid())
+  created_at  DateTime @default(now())
+  enabled     Boolean? @default(false)
+  title       String?
+  message     String?
+  image       String?
+  button_text String?
+  button_url  String?
+  delay       Int?     @default(0)
+
+  @@map("popup_settings")
+}
+
+model Product {
+  id               String   @id @default(uuid())
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  name             String
+  description      String?
+  price            Float
+  image_url        String?
+  category         String?
+  whatsapp_message String?
+  stock_quantity   Int?     @default(0)
+  is_available     Boolean? @default(true)
+
+  @@map("products")
+}
+
+model HomeContent {
+  id               String   @id @default(uuid())
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  heroTitle        String?
+  heroSubtitle     String?
+  heroImage        String?
+  heroButtonText   String?
+  heroStats        String?
+  aboutTitle       String?
+  aboutDescription String?
+  aboutPhilosophy1 String?
+  aboutPhilosophy2 String?
+  aboutButtonText  String?
+  aboutImage       String?
+  aboutFeatures    String?
+
+  @@map("home_content")
+}
+
+model File {
+  id         String   @id @default(uuid())
+  created_at DateTime @default(now())
+  name       String
+  url        String
+  size       String?
+  type       String?
+  dimensions String?
+  uploadDate String?
+
+  @@map("files")
+}
+model Instructor {
+  id             String   @id @default(uuid())
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  name           String
+  title          String?
+  specialization String?
+  experience     String?
+  certifications String?  // Storing as JSON string
+  rating         Float?   @default(0.0)
+  students       String?
+  description    String?
+  image          String?
+  email          String?
+  phone          String?
+  instagram      String?
+  facebook       String?
+  twitter        String?
+  linkedin       String?
+  featured       Boolean? @default(false)
+
+  @@map("instructors")
+}
+
+model OnlineClass {
+  id             String   @id @default(uuid())
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  title          String
+  instructor     String?
+  classStarting  String?
+  description    String?
+  price          String?
+  duration       String?
+  capacity       String?
+  schedule       String?
+  level          String?
+  rating         Float?   @default(0.0)
+  features       String?  // Storing as JSON string
+  image          String?
+  joinLink       String?
+  maxSeats       Int?     @default(0)
+  availableSeats Int?     @default(0)
+  featured       Boolean? @default(false)
+
+  @@map("online_classes")
+}
