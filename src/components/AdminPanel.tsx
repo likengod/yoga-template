@@ -44,6 +44,7 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
   const navigate = useNavigate();
   const isInstructor = currentUser.role?.toLowerCase() === 'instructor' || currentUser.role?.toLowerCase() === 'instructors';
   const [activeTab, setActiveTab] = useState(isInstructor ? 'bookings' : 'dashboard');
+  const [settingsTab, setSettingsTab] = useState('general');
 
   const handleClearCache = () => {
     // Clear all website cache
@@ -230,7 +231,7 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       case 'users':
         return <AdminUsers currentUser={currentUser} />;
       case 'site-settings':
-        return <AdminSiteSettings />;
+        return <AdminSiteSettings defaultTab={settingsTab} setDefaultTab={setSettingsTab} />;
       case 'seo':
         return <AdminSEO />;
       case 'classes':
@@ -242,7 +243,12 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       case 'pages':
         return <AdminPages />;
       case 'updates':
-        return <AdminUpdate />;
+        return <AdminUpdate onNavigate={(tab, subTab) => {
+          setActiveTab(tab);
+          if (subTab) {
+            setSettingsTab(subTab);
+          }
+        }} />;
       case 'favicon':
         return <AdminFavicon />;
       default:

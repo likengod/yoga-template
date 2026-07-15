@@ -7,7 +7,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { defaultSiteSettings } from '@/config/siteSettings';
 import { siteSettingsService } from '@/services/database';
 
-const AdminUpdate = () => {
+interface AdminUpdateProps {
+  onNavigate?: (tab: string, subTab?: string) => void;
+}
+
+const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
   const { toast } = useToast();
   const [isChecking, setIsChecking] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -72,6 +76,12 @@ const AdminUpdate = () => {
       setCurrentVersion(savedVersion.substring(0, 7));
     }
   }, []);
+
+  const handleGoToSettings = () => {
+    if (onNavigate) {
+      onNavigate('site-settings', 'integrations');
+    }
+  };
 
   const handleCheckUpdate = async () => {
     if (!githubConfig.token || !githubConfig.owner || !githubConfig.repo) {
@@ -270,7 +280,14 @@ const AdminUpdate = () => {
                 <AlertCircle size={14} /> Configuration Notice
               </p>
               <p>
-                Please configure your GitHub Repository Owner, Repository Name, and Personal Access Token in the <strong>Site Settings &rarr; Integrations</strong> tab to enable OTA updates.
+                Please configure your GitHub Repository Owner, Repository Name, and Personal Access Token in the{' '}
+                <button 
+                  onClick={handleGoToSettings}
+                  className="font-bold underline text-yoga-forest hover:text-yoga-sage cursor-pointer bg-transparent border-none p-0 inline"
+                >
+                  Site Settings &rarr; Integrations & API
+                </button>{' '}
+                tab to enable OTA updates.
               </p>
             </div>
           )}

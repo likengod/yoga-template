@@ -12,7 +12,12 @@ import GeneralSettingsTab from './admin/settings/GeneralSettingsTab';
 import IntegrationSettingsTab from './admin/settings/IntegrationSettingsTab';
 import { siteSettingsService } from '@/services/database';
 
-const AdminSiteSettings = () => {
+interface AdminSiteSettingsProps {
+  defaultTab?: string;
+  setDefaultTab?: (tab: string) => void;
+}
+
+const AdminSiteSettings = ({ defaultTab = 'general', setDefaultTab }: AdminSiteSettingsProps) => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<SiteSettingsData>(defaultSiteSettings);
 
@@ -146,7 +151,7 @@ const AdminSiteSettings = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
+      <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 bg-white border mb-6">
           <TabsTrigger value="general" className="data-[state=active]:bg-yoga-sage/10 data-[state=active]:text-yoga-forest">
             General Identity
