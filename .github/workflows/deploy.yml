@@ -50,21 +50,21 @@ jobs:
             # Navigate to the app directory
             cd /home/shaktiyogaraai/htdocs/shaktiyogaraai.com
             
-            # Pull the latest changes from the repository
-            git pull origin main
+            # Pull the latest changes from the repository as shaktiyogaraai user
+            sudo -u shaktiyogaraai git pull origin main
             
-            # Install dependencies and build
-            npm install --omit=dev --legacy-peer-deps
-            npm run build
+            # Install dependencies and build as shaktiyogaraai user
+            sudo -u shaktiyogaraai npm install --omit=dev --legacy-peer-deps
+            sudo -u shaktiyogaraai npm run build
             
             cd server
-            npm install --omit=dev --legacy-peer-deps
+            sudo -u shaktiyogaraai npm install --omit=dev --legacy-peer-deps
             
-            # Push database schema updates
-            npx prisma generate
-            npx prisma db push --accept-data-loss
+            # Push database schema updates as shaktiyogaraai user
+            sudo -u shaktiyogaraai npx prisma generate
+            sudo -u shaktiyogaraai npx prisma db push --accept-data-loss
             
-            # Restart the server using pm2
+            # Restart the server using pm2 as shaktiyogaraai user
             cd ..
-            pm2 restart shakti-yoga-server || pm2 start ecosystem.config.js
-            pm2 save
+            sudo -u shaktiyogaraai pm2 restart shakti-yoga-server || sudo -u shaktiyogaraai pm2 start ecosystem.config.js
+            sudo -u shaktiyogaraai pm2 save
