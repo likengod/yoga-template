@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { coursesService, Course, CourseVideo } from '@/services/coursesService';
 import { Plus, Trash, Edit2, Play, PlusCircle, X, Search, ImageIcon, Info, Sparkles } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useInstructorsData } from '@/hooks/useInstructorsData';
 
@@ -17,6 +18,7 @@ const AdminCourses = () => {
   const { instructors, isLoading: isLoadingInstructors } = useInstructorsData();
   const [showInstructorDropdown, setShowInstructorDropdown] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
@@ -100,10 +102,24 @@ const AdminCourses = () => {
   const handleDeleteCourse = (id: string) => {
     if (window.confirm("Are you sure you want to delete this course?")) {
       coursesService.deleteCourse(id);
+      setSelectedCourses(prev => prev.filter(cId => cId !== id));
       loadCourses();
       toast({
         title: "Course Deleted",
         description: "The course was successfully removed."
+      });
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedCourses.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedCourses.length} selected courses?`)) {
+      selectedCourses.forEach(id => coursesService.deleteCourse(id));
+      setSelectedCourses([]);
+      loadCourses();
+      toast({
+        title: "Courses Deleted",
+        description: "The selected courses were successfully removed."
       });
     }
   };
@@ -192,9 +208,16 @@ const AdminCourses = () => {
           <h2 className="text-2xl font-bold text-yoga-forest">Manage Video Courses</h2>
           <p className="text-yoga-forest/70">Create and modify online sequential courses for students ({courses.length} courses)</p>
         </div>
-        <Button onClick={handleOpenCreate} className="bg-yoga-sage hover:bg-yoga-forest">
-          <Plus size={16} className="mr-2" /> Add Course
-        </Button>
+        <div className="flex gap-2">
+          {selectedCourses.length > 0 && (
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              <Trash size={16} className="mr-2" /> Delete ({selectedCourses.length})
+            </Button>
+          )}
+          <Button onClick={handleOpenCreate} className="bg-yoga-sage hover:bg-yoga-forest">
+            <Plus size={16} className="mr-2" /> Add Course
+          </Button>
+        </div>
       </div>
 
       <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
@@ -202,6 +225,15 @@ const AdminCourses = () => {
           <Table>
             <TableHeader className="bg-yoga-cream/30">
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox 
+                    checked={courses.length > 0 && courses.every(c => selectedCourses.includes(c.id))}
+                    onCheckedChange={(checked) => {
+                      setSelectedCourses(checked ? courses.map(c => c.id) : []);
+                    }}
+                    className="border-yoga-forest text-yoga-forest"
+                  />
+                </TableHead>
                 <TableHead>Thumbnail</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Category</TableHead>
@@ -215,13 +247,22 @@ const AdminCourses = () => {
             <TableBody>
               {courses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-yoga-forest/50">
+                  <TableCell colSpan={9} className="text-center py-8 text-yoga-forest/50">
                     No courses found. Click "Add Course" to get started.
                   </TableCell>
                 </TableRow>
               ) : (
                 courses.map(course => (
                   <TableRow key={course.id}>
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedCourses.includes(course.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedCourses(prev => checked ? [...prev, course.id] : prev.filter(id => id !== course.id));
+                        }}
+                        className="border-yoga-forest text-yoga-forest"
+                      />
+                    </TableCell>
                     <TableCell>
                       <img src={course.thumbnail} alt={course.title} className="w-12 h-10 object-cover rounded-lg border" />
                     </TableCell>

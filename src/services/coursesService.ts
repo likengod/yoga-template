@@ -273,16 +273,14 @@ export const coursesService = {
       return _coursesCache;
     }
     const stored = localStorage.getItem(COURSES_KEY);
-    if (stored) {
+    if (stored !== null) {
       try {
         const parsed = JSON.parse(stored);
-        if (parsed.length >= 6) {
-          _coursesCache = parsed;
-          return parsed;
-        }
+        _coursesCache = parsed;
+        return parsed;
       } catch { /* fall through */ }
     }
-    // Seed dummy courses on first load or if count is less than 6
+    // Seed dummy courses on first load
     localStorage.setItem(COURSES_KEY, JSON.stringify(dummyCourses));
     _coursesCache = dummyCourses;
     return dummyCourses;
