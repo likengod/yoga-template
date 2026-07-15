@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Edit, Trash2, Key, Users, Shield, Crown, GraduationCap } from 'lucide-react';
+import { UserPlus, Edit, Trash2, Key, Users, Shield, Crown, GraduationCap, Eye, EyeOff } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminPagination from './admin/AdminPagination';
 import { usersApi } from '@/services/mysqlApi';
@@ -45,6 +45,13 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
     role: 'user'
   });
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [createConfirmPassword, setCreateConfirmPassword] = useState('');
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showCreateConfirmPassword, setShowCreateConfirmPassword] = useState(false);
   const { toast } = useToast();
 
   // Default users
@@ -187,6 +194,15 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       return;
     }
 
+    if (newUser.password !== createConfirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Passwords do not match",
+      });
+      return;
+    }
+
     try {
       const userToCreate: User = {
         ...newUser,
@@ -200,6 +216,9 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       });
 
       setNewUser({ id: '', username: '', email: '', password: '', role: 'user' });
+      setCreateConfirmPassword('');
+      setShowCreatePassword(false);
+      setShowCreateConfirmPassword(false);
       setIsCreateDialogOpen(false);
       loadUsers();
     } catch (error) {
@@ -248,6 +267,15 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       return;
     }
 
+    if (newPassword !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Passwords do not match",
+      });
+      return;
+    }
+
     try {
       const updatedUser = { ...selectedUser, password: newPassword };
       await usersApi.update(selectedUser.id, updatedUser);
@@ -258,6 +286,9 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       });
 
       setNewPassword('');
+      setConfirmPassword('');
+      setShowPassword(false);
+      setShowConfirmPassword(false);
       setIsPasswordDialogOpen(false);
       setSelectedUser(null);
       loadUsers();
@@ -383,7 +414,15 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
               </SelectContent>
             </Select>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+              setIsCreateDialogOpen(open);
+              if (!open) {
+                setNewUser({ id: '', username: '', email: '', password: '', role: 'user' });
+                setCreateConfirmPassword('');
+                setShowCreatePassword(false);
+                setShowCreateConfirmPassword(false);
+              }
+            }}>
             <DialogTrigger asChild>
               <Button className="bg-yoga-sage hover:bg-yoga-forest">
                 <UserPlus size={16} className="mr-2" />
@@ -440,13 +479,43 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
                 </div>
                 <div>
                   <Label htmlFor="new-password">Password</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="Enter password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showCreatePassword ? "text" : "password"}
+                      value={newUser.password}
+                      onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Enter password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCreatePassword(!showCreatePassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showCreatePassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="new-confirm-password">Confirm Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-confirm-password"
+                      type={showCreateConfirmPassword ? "text" : "password"}
+                      value={createConfirmPassword}
+                      onChange={(e) => setCreateConfirmPassword(e.target.value)}
+                      placeholder="Confirm password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateConfirmPassword(!showCreateConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showCreateConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="new-role">Role</Label>
@@ -649,8 +718,15 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Change Password Dialog */}
-      <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+      <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => {
+        setIsPasswordDialogOpen(open);
+        if (!open) {
+          setNewPassword('');
+          setConfirmPassword('');
+          setShowPassword(false);
+          setShowConfirmPassword(false);
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
@@ -661,13 +737,43 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
           <div className="space-y-4">
             <div>
               <Label htmlFor="new-user-password">New Password</Label>
-              <Input
-                id="new-user-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-              />
+              <div className="relative">
+                <Input
+                  id="new-user-password"
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="confirm-user-password">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirm-user-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             <Button onClick={handleChangePassword} className="w-full bg-yoga-sage hover:bg-yoga-forest">
               <Key size={16} className="mr-2" />
