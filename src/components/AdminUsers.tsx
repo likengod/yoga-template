@@ -49,9 +49,8 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
 
   // Default users
   const defaultUsers: User[] = [
-    { id: '000001', username: 'admin', password: 'admin123', role: 'admin', email: 'admin@example.com', phone: '+1234567890' },
+    { id: '000001', username: 'admin', password: 'admin123', role: 'superadmin', email: 'admin@example.com', phone: '+1234567890' },
     { id: '000002', username: 'yoga_admin', password: 'shakti2024', role: 'admin', email: 'yoga_admin@example.com', phone: '+1234567891' },
-    { id: '000003', username: 'superadmin', password: 'super123', role: 'superadmin', email: 'superadmin@example.com', phone: '+1234567892' },
     { id: '000004', username: 'instructor', password: 'teacher123', role: 'instructor', email: 'instructor@example.com', phone: '+1234567893' },
     { id: '000005', username: 'student', password: 'student123', role: 'user', email: 'student@example.com', phone: '+1234567894' },
     ...Array.from({ length: 20 }).map((_, i) => ({

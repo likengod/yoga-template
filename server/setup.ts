@@ -182,41 +182,28 @@ NODE_ENV="production"
       console.log('Seeding setup admin and system users...');
       const prismaClient = new PrismaClient();
       
-      // Admin (configured in Setup Wizard)
+      // Admin (configured in Setup Wizard) - set as superadmin
       await prismaClient.user.upsert({
         where: { id: '000001' },
         update: {
           username: 'admin',
           email: adminEmail,
           password: adminPassword,
-          role: 'admin',
+          role: 'superadmin',
         },
         create: {
           id: '000001',
           username: 'admin',
           email: adminEmail,
           password: adminPassword,
-          role: 'admin',
+          role: 'superadmin',
         }
       });
 
-      // Superadmin
-      await prismaClient.user.upsert({
-        where: { id: '000003' },
-        update: {
-          username: 'superadmin',
-          email: 'superadmin@example.com',
-          password: 'super123',
-          role: 'superadmin',
-        },
-        create: {
-          id: '000003',
-          username: 'superadmin',
-          email: 'superadmin@example.com',
-          password: 'super123',
-          role: 'superadmin',
-        }
-      });
+      // Remove default superadmin if exists (for security)
+      await prismaClient.user.delete({
+        where: { id: '000003' }
+      }).catch(() => {});
 
       // Instructor
       await prismaClient.user.upsert({
