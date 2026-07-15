@@ -84,7 +84,7 @@ const UserMenu = ({ user, onLogout, isAdminPage = false }: UserMenuProps) => {
             <span>Admin Panel</span>
           </DropdownMenuItem>
         )}
-        {!isAdminPage && (
+        {!isAdminPage && user.role === 'user' && (
           <DropdownMenuItem onClick={() => navigate('/my-courses')} className="cursor-pointer text-yoga-forest focus:bg-yoga-sage/10 focus:text-yoga-forest">
             <BookOpen className="mr-2 h-4 w-4" />
             <span>Your Courses</span>
