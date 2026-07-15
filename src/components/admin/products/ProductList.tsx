@@ -30,6 +30,9 @@ interface ProductListProps {
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
   onAddFirst: () => void;
+  selectedProducts: string[];
+  onSelectProduct: (id: string, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
 }
 
 const ProductList = ({ 
@@ -39,8 +42,12 @@ const ProductList = ({
   onPageChange, 
   onEdit, 
   onDelete,
-  onAddFirst
+  onAddFirst,
+  selectedProducts,
+  onSelectProduct,
+  onSelectAll
 }: ProductListProps) => {
+  const allSelected = products.length > 0 && products.every(p => selectedProducts.includes(p.id));
 
 
 
@@ -64,11 +71,32 @@ const ProductList = ({
 
   return (
     <div className="space-y-4">
+      {products.length > 0 && (
+        <div className="flex items-center px-4 py-2 bg-yoga-sage/10 rounded-md border border-yoga-sage/20">
+          <Checkbox 
+            id="select-all-products" 
+            checked={allSelected} 
+            onCheckedChange={(checked) => onSelectAll(!!checked)}
+            className="border-yoga-forest text-yoga-forest"
+          />
+          <label htmlFor="select-all-products" className="text-sm font-medium text-yoga-forest ml-2 cursor-pointer">
+            Select All on this page
+          </label>
+        </div>
+      )}
       <div className="grid gap-2">
         {products.map((product) => (
           <Card key={product.id} className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center">
+                <Checkbox 
+                  checked={selectedProducts.includes(product.id)}
+                  onCheckedChange={(checked) => onSelectProduct(product.id, !!checked)}
+                  className="border-yoga-forest text-yoga-forest"
+                />
+              </div>
+              <div className="flex-1 flex items-start gap-4">
+                <div className="flex-shrink-0">
                 {product.image_url ? (
                   <img loading="lazy"
                     src={product.image_url}
@@ -130,7 +158,8 @@ const ProductList = ({
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
+        </Card>
         ))}
       </div>
 

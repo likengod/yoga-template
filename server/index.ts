@@ -447,6 +447,23 @@ app.post('/api/articles/seed', authenticateToken, async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to seed articles' });
   }
+// Seed route for Products
+app.post('/api/products/seed', authenticateToken, async (req, res) => {
+  try {
+    const products = req.body.products;
+    if (!products || !Array.isArray(products)) {
+      return res.status(400).json({ error: 'Invalid products data' });
+    }
+    const created = [];
+    for (const product of products) {
+      const { id, created_at, updated_at, ...data } = product;
+      created.push(await prisma.product.create({ data }));
+    }
+    res.json({ success: true, created });
+  } catch (error) {
+    console.error('Failed to seed products:', error);
+    res.status(500).json({ error: 'Failed to seed products' });
+  }
 });
 
 // Singletons (Upsert logic)

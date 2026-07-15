@@ -27,6 +27,7 @@ import ProductList, { Product } from './admin/products/ProductList';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -56,21 +57,23 @@ export default function AdminProducts() {
 
   const loadProducts = async () => {
     try {
-      const data = await productsApi.getAll();
+      let data = await productsApi.getAll();
       
       if (!data || data.length === 0) {
-        setProducts(SEED_PRODUCTS);
-      } else {
-          setProducts(data);
-        }
-      } catch (error) {
-        console.error('Error loading products:', error);
-        toast({
-          title: "Notice",
-          description: "Using fallback products.",
-        });
-        setProducts(SEED_PRODUCTS);
-      } finally {
+        console.log('AdminProducts: Database is empty, seeding default products...');
+        await productsApi.seed(SEED_PRODUCTS);
+        data = await productsApi.getAll();
+      }
+      
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast({
+        title: "Notice",
+        description: "Using fallback products.",
+      });
+      setProducts(SEED_PRODUCTS);
+    } finally {
       setLoading(false);
     }
   };
@@ -177,12 +180,36 @@ export default function AdminProducts() {
         description: "Product deleted successfully",
       });
       
+      setSelectedProducts(prev => prev.filter(pId => pId !== id));
       loadProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({
         title: "Error",
         description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedProducts.length} selected products?`)) return;
+
+    try {
+      await Promise.all(selectedProducts.map(id => productsApi.remove(id)));
+
+      toast({
+        title: "Success",
+        description: `Successfully deleted ${selectedProducts.length} products.`,
+      });
+      setSelectedProducts([]);
+      loadProducts();
+    } catch (error) {
+      console.error('Error deleting products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete products",
         variant: "destructive",
       });
     }
@@ -258,6 +285,11 @@ export default function AdminProducts() {
             className="pl-9 bg-white"
           />
         </div>
+        {selectedProducts.length > 0 && (
+          <Button variant="destructive" onClick={handleBulkDelete}>
+            <Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedProducts.length})
+          </Button>
+        )}
       </div>
 
       <ProductList
@@ -268,6 +300,13 @@ export default function AdminProducts() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onAddFirst={() => setIsDialogOpen(true)}
+        selectedProducts={selectedProducts}
+        onSelectProduct={(id, checked) => {
+          setSelectedProducts(prev => checked ? [...prev, id] : prev.filter(pId => pId !== id));
+        }}
+        onSelectAll={(checked) => {
+          setSelectedProducts(checked ? currentProducts.map(p => p.id) : []);
+        }}
       />
     </div>
   );

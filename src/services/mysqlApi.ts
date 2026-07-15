@@ -69,6 +69,9 @@ export const productsApi = {
   },
   async remove(id: string) {
     return api.delete(`/products/${id}`);
+  },
+  async seed(products: any[]) {
+    return api.post('/products/seed', { products });
   }
 };
 
