@@ -38,7 +38,20 @@ const SUPERADMIN_PASSWORD = process.env.SUPERADMIN_PASSWORD;
 const INSTRUCTOR_PASSWORD = process.env.INSTRUCTOR_PASSWORD;
 
 // Security & Optimization Middlewares
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:", "http:", "*"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https:", "http:", "*"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+}));
 app.use(compression());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
