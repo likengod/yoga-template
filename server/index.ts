@@ -47,6 +47,7 @@ app.use(helmet({
       imgSrc: ["'self'", "data:", "blob:", "https:", "http:", "*"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       connectSrc: ["'self'", "https:", "http:", "*"],
+      frameSrc: ["'self'", "https://www.google.com", "https://google.com", "https://www.youtube.com", "https://youtube.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
