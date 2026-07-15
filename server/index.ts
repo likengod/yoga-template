@@ -420,7 +420,10 @@ const handleCrud = (
     try {
       await model.delete({ where: { id: req.params.id } });
       res.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
+      if (error && error.code === 'P2025') {
+        return res.json({ success: true, message: 'Already deleted' });
+      }
       console.error('handleCrud DELETE error:', error);
       res.status(500).json({ error: 'Failed to delete item' });
     }
@@ -956,7 +959,10 @@ app.delete('/api/certificates/:id', authenticateToken, async (req, res) => {
       where: { id: req.params.id }
     });
     res.status(204).send();
-  } catch (error) {
+  } catch (error: any) {
+    if (error && error.code === 'P2025') {
+      return res.status(204).send();
+    }
     res.status(500).json({ error: 'Failed to delete certificate' });
   }
 });
@@ -1036,7 +1042,10 @@ articlesRouter.delete('/:id', authenticateToken, async (req, res) => {
   try {
     await prisma.article.delete({ where: { id: req.params.id } });
     res.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
+    if (error && error.code === 'P2025') {
+      return res.json({ success: true, message: 'Already deleted' });
+    }
     res.status(500).json({ error: 'Failed to delete item in MySQL' });
   }
 });
