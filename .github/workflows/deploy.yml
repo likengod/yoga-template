@@ -48,6 +48,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT || '22' }}
           script: |
             sudo -i -u shaktiyogaraai bash -c "
+              source /home/shaktiyogaraai/.nvm/nvm.sh &&
               cd /home/shaktiyogaraai/htdocs/shaktiyogaraai.com &&
               git pull origin main &&
               npm install --omit=dev --legacy-peer-deps &&
