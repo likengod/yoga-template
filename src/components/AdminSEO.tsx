@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Save, Globe, FileText, Search, Image } from 'lucide-react';
 import ImagePicker from './ImagePicker';
 import AdminFavicon from './AdminFavicon';
+import { seoSettingsService } from '@/services/database';
 
 interface SEOData {
   siteName: string;
@@ -45,12 +46,46 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
     favicon: '/favicon.ico'
   });
 
-  // Load SEO data from localStorage on mount
+  // Load SEO data from database on mount
   useEffect(() => {
-    const storedSEOData = localStorage.getItem('seoData');
-    if (storedSEOData) {
-      setSeoData(JSON.parse(storedSEOData));
-    }
+    const loadSEO = async () => {
+      try {
+        const settings = await seoSettingsService.getSettings();
+        if (settings && settings.keywords) {
+          try {
+            const parsed = JSON.parse(settings.keywords);
+            setSeoData({
+              ...parsed,
+              siteName: settings.title || parsed.siteName,
+              siteDescription: settings.description || parsed.siteDescription,
+              robotsTxt: settings.robotsTxt || parsed.robotsTxt
+            });
+          } catch (e) {
+            setSeoData(prev => ({
+              ...prev,
+              siteName: settings.title || prev.siteName,
+              siteDescription: settings.description || prev.siteDescription,
+              robotsTxt: settings.robotsTxt || prev.robotsTxt,
+              siteKeywords: settings.keywords || prev.siteKeywords
+            }));
+          }
+        } else {
+          // Fallback to localStorage
+          const storedSEOData = localStorage.getItem('seoData');
+          if (storedSEOData) {
+            setSeoData(JSON.parse(storedSEOData));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load SEO settings from database:', err);
+        const storedSEOData = localStorage.getItem('seoData');
+        if (storedSEOData) {
+          setSeoData(JSON.parse(storedSEOData));
+        }
+      }
+    };
+    
+    loadSEO();
   }, []);
 
   return (
@@ -265,21 +300,67 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
     </div>
   );
 
-  // Helper functions
-  function handleSaveSEO() {
-    // Save to localStorage
-    localStorage.setItem('seoData', JSON.stringify(seoData));
-    
-    // Update document meta tags immediately
-    updateMetaTags();
-    
-    // Update robots.txt (this would typically be done server-side)
-    updateRobotsTxt();
-    
-    toast({
-      title: "SEO Settings Saved",
-      description: "All SEO settings have been updated successfully."
-    });
+  async function handleSaveSEO() {
+    try {
+      // Save to database
+      const payload = {
+        title: seoData.siteName,
+        description: seoData.siteDescription,
+        keywords: JSON.stringify(seoData),
+        robotsTxt: seoData.robotsTxt,
+        sitemapXml: `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://shaktiyogaraai.com/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://shaktiyogaraai.com/about</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://shaktiyogaraai.com/classes</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://shaktiyogaraai.com/instructors</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://shaktiyogaraai.com/store</loc>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://shaktiyogaraai.com/contact</loc>
+    <priority>0.6</priority>
+  </url>
+</urlset>`
+      };
+      
+      await seoSettingsService.updateSettings(payload);
+      
+      // Save to localStorage as local fallback
+      localStorage.setItem('seoData', JSON.stringify(seoData));
+      
+      // Update document meta tags immediately
+      updateMetaTags();
+      
+      // Update robots.txt
+      updateRobotsTxt();
+      
+      toast({
+        title: "SEO Settings Saved",
+        description: "All SEO settings have been updated successfully on the database."
+      });
+    } catch (err) {
+      console.error('Failed to save SEO settings to database:', err);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Could not save SEO settings to the database. Saved locally instead."
+      });
+      localStorage.setItem('seoData', JSON.stringify(seoData));
+    }
   }
 
   function updateMetaTags() {

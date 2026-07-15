@@ -8,22 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Edit, Trash2, Key, Users, Shield, Crown } from 'lucide-react';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { UserPlus, Edit, Trash2, Key, Users, Shield, Crown, GraduationCap } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import AdminPagination from './admin/AdminPagination';
+import { usersApi } from '@/services/mysqlApi';
 
 interface User {
   id: string;
   username: string;
   email: string;
   password: string;
-  role: 'guest' | 'user' | 'admin' | 'superadmin';
+  role: 'guest' | 'user' | 'admin' | 'superadmin' | 'instructor';
   phone?: string;
 }
 
@@ -33,6 +28,7 @@ interface AdminUsersProps {
 
 const AdminUsers = ({ currentUser }: AdminUsersProps) => {
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
@@ -40,7 +36,9 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-  const [newUser, setNewUser] = useState<Omit<User, 'id'>>({
+  const [autoGenerateId, setAutoGenerateId] = useState(true);
+  const [newUser, setNewUser] = useState<User>({
+    id: '',
     username: '',
     email: '',
     password: '',
@@ -51,13 +49,13 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
 
   // Default users
   const defaultUsers: User[] = [
-    { id: '1', username: 'admin', password: 'admin123', role: 'admin', email: 'admin@example.com', phone: '+1234567890' },
-    { id: '2', username: 'yoga_admin', password: 'shakti2024', role: 'admin', email: 'yoga_admin@example.com', phone: '+1234567891' },
-    { id: '3', username: 'superadmin', password: 'super123', role: 'superadmin', email: 'superadmin@example.com', phone: '+1234567892' },
-    { id: '4', username: 'instructor', password: 'teacher123', role: 'user', email: 'instructor@example.com', phone: '+1234567893' },
-    { id: '5', username: 'student', password: 'student123', role: 'user', email: 'student@example.com', phone: '+1234567894' },
+    { id: '000001', username: 'admin', password: 'admin123', role: 'admin', email: 'admin@example.com', phone: '+1234567890' },
+    { id: '000002', username: 'yoga_admin', password: 'shakti2024', role: 'admin', email: 'yoga_admin@example.com', phone: '+1234567891' },
+    { id: '000003', username: 'superadmin', password: 'super123', role: 'superadmin', email: 'superadmin@example.com', phone: '+1234567892' },
+    { id: '000004', username: 'instructor', password: 'teacher123', role: 'instructor', email: 'instructor@example.com', phone: '+1234567893' },
+    { id: '000005', username: 'student', password: 'student123', role: 'user', email: 'student@example.com', phone: '+1234567894' },
     ...Array.from({ length: 20 }).map((_, i) => ({
-      id: (i + 6).toString(),
+      id: (i + 6).toString().padStart(6, '0'),
       username: `mockuser${i + 1}`,
       password: 'password123',
       role: 'user' as const,
@@ -70,11 +68,62 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
     loadUsers();
   }, []);
 
-  const loadUsers = () => {
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const allUsers = [...defaultUsers, ...storedUsers];
-    setUsers(allUsers);
+  const loadUsers = async () => {
+    try {
+      let dbUsers = await usersApi.getAll();
+      if (dbUsers && dbUsers.length > 0) {
+        setUsers(dbUsers);
+        localStorage.setItem('users', JSON.stringify(dbUsers));
+        return;
+      } else {
+        // Seed default users to backend if database is empty
+        for (const user of defaultUsers) {
+          try {
+            await usersApi.create(user);
+          } catch (e) {
+            console.error("Failed to seed user:", user.username, e);
+          }
+        }
+        dbUsers = await usersApi.getAll();
+        if (dbUsers && dbUsers.length > 0) {
+          setUsers(dbUsers);
+          localStorage.setItem('users', JSON.stringify(dbUsers));
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load users from database:", err);
+    }
+
+    // Fallback to localStorage if database query failed or is empty
+    let storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    if (storedUsers.length === 0 && localStorage.getItem('users_initialized') !== 'true') {
+      storedUsers = defaultUsers;
+      localStorage.setItem('users', JSON.stringify(storedUsers));
+      localStorage.setItem('users_initialized', 'true');
+    }
+    setUsers(storedUsers);
   };
+
+  useEffect(() => {
+    if (isCreateDialogOpen) {
+      if (autoGenerateId) {
+        const generate6DigitId = () => {
+          let uniqueId = '';
+          let isUnique = false;
+          const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+          while (!isUnique) {
+            uniqueId = Math.floor(100000 + Math.random() * 900000).toString();
+            isUnique = !users.some(u => u.id === uniqueId) && !storedUsers.some((u: any) => u.id === uniqueId);
+          }
+          return uniqueId;
+        };
+        setNewUser(prev => ({ ...prev, id: generate6DigitId() }));
+      } else {
+        setNewUser(prev => ({ ...prev, id: '' }));
+      }
+    }
+  }, [isCreateDialogOpen, autoGenerateId]);
 
   const canManageUser = (targetUser: User) => {
     // Super admin can manage everyone except other super admins
@@ -83,9 +132,15 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
     }
     // Admin can manage users and guests, but not admins or super admins
     if (currentUser.role === 'admin') {
-      return targetUser.role === 'user' || targetUser.role === 'guest';
+      return targetUser.role === 'user' || targetUser.role === 'guest' || targetUser.role === 'instructor';
     }
     return false;
+  };
+
+  const systemUserIds = ['000001', '000002', '000003', '000004', '000005'];
+
+  const isDeletable = (user: User) => {
+    return canManageUser(user) && !systemUserIds.includes(user.id);
   };
 
   const getRoleIcon = (role: string) => {
@@ -94,6 +149,8 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
         return <Crown size={16} className="text-yellow-600" />;
       case 'admin':
         return <Shield size={16} className="text-blue-600" />;
+      case 'instructor':
+        return <GraduationCap size={16} className="text-purple-600" />;
       case 'user':
         return <Users size={16} className="text-green-600" />;
       case 'guest':
@@ -103,12 +160,12 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
     }
   };
 
-  const handleCreateUser = () => {
-    if (!newUser.username || !newUser.email || !newUser.password) {
+  const handleCreateUser = async () => {
+    if (!newUser.id || !newUser.username || !newUser.email || !newUser.password) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please fill in all fields (including User ID)",
       });
       return;
     }
@@ -122,45 +179,65 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       return;
     }
 
-    const userToCreate: User = {
-      ...newUser,
-      id: Date.now().toString(),
-    };
+    if (users.some(user => user.id === newUser.id)) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "User ID already exists. Please choose a unique ID.",
+      });
+      return;
+    }
 
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedUsers = [...storedUsers, userToCreate];
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    try {
+      const userToCreate: User = {
+        ...newUser,
+      };
 
-    toast({
-      title: "User Created",
-      description: `User ${userToCreate.username} has been created successfully`,
-    });
+      await usersApi.create(userToCreate);
 
-    setNewUser({ username: '', email: '', password: '', role: 'user' });
-    setIsCreateDialogOpen(false);
-    loadUsers();
+      toast({
+        title: "User Created",
+        description: `User ${userToCreate.username} has been created successfully`,
+      });
+
+      setNewUser({ id: '', username: '', email: '', password: '', role: 'user' });
+      setIsCreateDialogOpen(false);
+      loadUsers();
+    } catch (error) {
+      console.error("Failed to create user in database:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create user in database",
+      });
+    }
   };
 
-  const handleUpdateUser = () => {
+  const handleUpdateUser = async () => {
     if (!selectedUser) return;
 
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedStoredUsers = storedUsers.map((user: User) => 
-      user.id === selectedUser.id ? selectedUser : user
-    );
-    localStorage.setItem('users', JSON.stringify(updatedStoredUsers));
+    try {
+      await usersApi.update(selectedUser.id, selectedUser);
 
-    toast({
-      title: "User Updated",
-      description: `User ${selectedUser.username} has been updated successfully`,
-    });
+      toast({
+        title: "User Updated",
+        description: `User ${selectedUser.username} has been updated successfully`,
+      });
 
-    setIsEditDialogOpen(false);
-    setSelectedUser(null);
-    loadUsers();
+      setIsEditDialogOpen(false);
+      setSelectedUser(null);
+      loadUsers();
+    } catch (error) {
+      console.error("Failed to update user in database:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update user in database",
+      });
+    }
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!selectedUser || !newPassword) return;
 
     if (newPassword.length < 6) {
@@ -172,24 +249,30 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       return;
     }
 
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedStoredUsers = storedUsers.map((user: User) => 
-      user.id === selectedUser.id ? { ...user, password: newPassword } : user
-    );
-    localStorage.setItem('users', JSON.stringify(updatedStoredUsers));
+    try {
+      const updatedUser = { ...selectedUser, password: newPassword };
+      await usersApi.update(selectedUser.id, updatedUser);
 
-    toast({
-      title: "Password Changed",
-      description: `Password for ${selectedUser.username} has been updated`,
-    });
+      toast({
+        title: "Password Changed",
+        description: `Password for ${selectedUser.username} has been updated`,
+      });
 
-    setNewPassword('');
-    setIsPasswordDialogOpen(false);
-    setSelectedUser(null);
-    loadUsers();
+      setNewPassword('');
+      setIsPasswordDialogOpen(false);
+      setSelectedUser(null);
+      loadUsers();
+    } catch (error) {
+      console.error("Failed to change password in database:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to change password in database",
+      });
+    }
   };
 
-  const handleDeleteUser = (user: User) => {
+  const handleDeleteUser = async (user: User) => {
     if (!canManageUser(user)) {
       toast({
         variant: "destructive",
@@ -199,8 +282,8 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       return;
     }
 
-    // Prevent deleting default users (they're built-in)
-    if (defaultUsers.some(defaultUser => defaultUser.id === user.id)) {
+    // Prevent deleting built-in system users
+    if (systemUserIds.includes(user.id)) {
       toast({
         variant: "destructive",
         title: "Cannot Delete",
@@ -209,21 +292,68 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
       return;
     }
 
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedUsers = storedUsers.filter((u: User) => u.id !== user.id);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    try {
+      await usersApi.remove(user.id);
 
-    toast({
-      title: "User Deleted",
-      description: `User ${user.username} has been deleted`,
-    });
+      toast({
+        title: "User Deleted",
+        description: `User ${user.username} has been deleted`,
+      });
 
-    loadUsers();
+      loadUsers();
+    } catch (error) {
+      console.error("Failed to delete user in database:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete user in database",
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedUsers.length === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedUsers.length} selected users?`)) return;
+
+    try {
+      // Delete in parallel
+      await Promise.all(selectedUsers.map(id => usersApi.remove(id)));
+
+      toast({
+        title: "Users Deleted",
+        description: `Successfully deleted ${selectedUsers.length} users`,
+      });
+
+      setSelectedUsers([]);
+      loadUsers();
+    } catch (error) {
+      console.error("Failed to bulk delete users in database:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete one or more users",
+      });
+      loadUsers();
+    }
   };
 
   const availableRoles = currentUser.role === 'superadmin' 
-    ? ['guest', 'user', 'admin', 'superadmin']
-    : ['guest', 'user'];
+    ? ['guest', 'user', 'instructor', 'admin', 'superadmin']
+    : ['guest', 'user', 'instructor'];
+
+  const pageUsers = users
+    .filter(u => roleFilter === 'all' || u.role === roleFilter)
+    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const pageDeletableUsers = pageUsers.filter(isDeletable);
+
+  const getEditRoles = (userRole: string) => {
+    const roles = [...availableRoles];
+    if (userRole && !roles.includes(userRole)) {
+      roles.push(userRole);
+    }
+    return roles;
+  };
 
   return (
     <div className="space-y-6">
@@ -235,7 +365,12 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Select value={roleFilter} onValueChange={(val) => { setRoleFilter(val); setCurrentPage(1); }}>
+            {selectedUsers.length > 0 && (
+              <Button variant="destructive" onClick={handleBulkDelete}>
+                <Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedUsers.length})
+              </Button>
+            )}
+            <Select value={roleFilter} onValueChange={(val) => { setRoleFilter(val); setCurrentPage(1); setSelectedUsers([]); }}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Filter by Role" />
               </SelectTrigger>
@@ -243,6 +378,7 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="guest">Guest</SelectItem>
                 <SelectItem value="user">User</SelectItem>
+                <SelectItem value="instructor">Instructor</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="superadmin">Superadmin</SelectItem>
               </SelectContent>
@@ -263,6 +399,27 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
+                <div className="flex items-center space-x-2 py-1">
+                  <Checkbox 
+                    id="auto-id" 
+                    checked={autoGenerateId} 
+                    onCheckedChange={(checked) => setAutoGenerateId(!!checked)} 
+                    className="border-yoga-forest text-yoga-forest"
+                  />
+                  <Label htmlFor="auto-id" className="text-sm font-medium text-gray-700 cursor-pointer">
+                    Auto-generate 6-digit unique User ID
+                  </Label>
+                </div>
+                <div>
+                  <Label htmlFor="new-id">User ID *</Label>
+                  <Input
+                    id="new-id"
+                    value={newUser.id}
+                    onChange={(e) => !autoGenerateId && setNewUser(prev => ({ ...prev, id: e.target.value }))}
+                    disabled={autoGenerateId}
+                    placeholder={autoGenerateId ? "Auto-generating..." : "Enter custom User ID"}
+                  />
+                </div>
                 <div>
                   <Label htmlFor="new-username">Username</Label>
                   <Input
@@ -323,6 +480,26 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12 py-2">
+                  <Checkbox 
+                    checked={
+                      pageDeletableUsers.length > 0 && 
+                      pageDeletableUsers.every(u => selectedUsers.includes(u.id))
+                    }
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedUsers(prev => {
+                          const toAdd = pageDeletableUsers.map(u => u.id).filter(id => !prev.includes(id));
+                          return [...prev, ...toAdd];
+                        });
+                      } else {
+                        setSelectedUsers(prev => prev.filter(id => !pageDeletableUsers.some(u => u.id === id)));
+                      }
+                    }}
+                    className="border-yoga-forest text-yoga-forest"
+                  />
+                </TableHead>
+                <TableHead className="py-2">User ID</TableHead>
                 <TableHead className="py-2">Username</TableHead>
                 <TableHead className="py-2">Email</TableHead>
                 <TableHead className="py-2">Phone</TableHead>
@@ -331,10 +508,25 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users
-                .filter(u => roleFilter === 'all' || u.role === roleFilter)
-                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((user) => (
+              {pageUsers.map((user) => (
                 <TableRow key={user.id}>
+                  <TableCell className="py-2">
+                    {isDeletable(user) ? (
+                      <Checkbox 
+                        checked={selectedUsers.includes(user.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedUsers(prev => checked ? [...prev, user.id] : prev.filter(id => id !== user.id));
+                        }}
+                        className="border-yoga-forest text-yoga-forest"
+                      />
+                    ) : (
+                      <Checkbox 
+                        disabled
+                        className="border-yoga-forest/20 opacity-30 cursor-not-allowed"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell className="py-2 font-mono text-xs text-yoga-forest font-semibold">{user.id}</TableCell>
                   <TableCell className="py-2 font-medium">{user.username}</TableCell>
                   <TableCell className="py-2">{user.email}</TableCell>
                   <TableCell className="py-2">{user.phone || 'N/A'}</TableCell>
@@ -368,14 +560,16 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
                           >
                             <Key size={14} />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteUser(user)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 size={14} />
-                          </Button>
+                          {isDeletable(user) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteUser(user)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>
@@ -388,35 +582,11 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
 
         {users.filter(u => roleFilter === 'all' || u.role === roleFilter).length > itemsPerPage && (
           <div className="mt-4">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-                
-                {Array.from({ length: Math.ceil(users.filter(u => roleFilter === 'all' || u.role === roleFilter).length / itemsPerPage) }).map((_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink 
-                      onClick={() => setCurrentPage(i + 1)}
-                      isActive={currentPage === i + 1}
-                      className="cursor-pointer"
-                    >
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(users.filter(u => roleFilter === 'all' || u.role === roleFilter).length / itemsPerPage)))}
-                    className={currentPage === Math.ceil(users.filter(u => roleFilter === 'all' || u.role === roleFilter).length / itemsPerPage) ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+            <AdminPagination 
+              currentPage={currentPage}
+              totalPages={Math.ceil(users.filter(u => roleFilter === 'all' || u.role === roleFilter).length / itemsPerPage)}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </Card>
@@ -461,7 +631,7 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableRoles.map(role => (
+                    {getEditRoles(selectedUser.role).map(role => (
                       <SelectItem key={role} value={role}>
                         <div className="flex items-center space-x-2">
                           {getRoleIcon(role)}

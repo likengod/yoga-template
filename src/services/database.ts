@@ -11,7 +11,10 @@ export const bookingService = {
     return api.delete(`/bookings/${id}`);
   },
   async updateStatus(id: string, status: string) {
-    return api.put(`/bookings/${id}/status`, { status });
+    return api.put(`/bookings/${id}`, { status });
+  },
+  async searchBookingsByPhone(phone: string) {
+    return api.get(`/bookings/search?phone=${encodeURIComponent(phone)}`);
   }
 };
 
@@ -21,11 +24,20 @@ export const popupService = {
     return items.length > 0 ? items[0] : null;
   },
   async updateSettings(settings: any) {
+    const dbSettings = {
+      enabled: settings.enabled,
+      title: settings.title,
+      message: settings.message,
+      button_text: settings.buttonText !== undefined ? settings.buttonText : settings.button_text,
+      button_url: settings.buttonUrl !== undefined ? settings.buttonUrl : settings.button_url,
+      image: settings.image,
+      delay: settings.delay
+    };
     const items = await api.get('/popup_settings');
     if (items.length > 0) {
-      return api.put(`/popup_settings/${items[0].id}`, settings);
+      return api.put(`/popup_settings/${items[0].id}`, dbSettings);
     }
-    return api.post('/popup_settings', settings);
+    return api.post('/popup_settings', dbSettings);
   }
 };
 
@@ -144,7 +156,7 @@ export const contactService = {
   }
 };
 
-  export const galleryService = {
+export const galleryService = {
   async getImages() {
     return api.get('/gallery_images');
   },
@@ -156,5 +168,77 @@ export const contactService = {
   },
   async deleteImage(id: string) {
     return api.delete(`/gallery_images/${id}`);
+  },
+  async incrementViews(id: string) {
+    return api.post(`/gallery_images/${id}/view`, {});
+  }
+};
+
+export const policiesService = {
+  async getPolicy(type: string) {
+    return api.get(`/policies/${type}`);
+  },
+  async updatePolicy(type: string, content: any) {
+    return api.post(`/policies/${type}`, content);
+  }
+};
+
+export const certificateService = {
+  async getCertificates() {
+    return api.get('/certificates');
+  },
+  async getCertificate(certId: string) {
+    return api.get(`/certificates/${certId}`);
+  },
+  async autoGenerateCertificate(phone: string) {
+    return api.post('/certificates/auto', { phone });
+  },
+  async issueCertificate(data: any) {
+    return api.post('/certificates', data);
+  },
+  async deleteCertificate(id: string) {
+    return api.delete(`/certificates/${id}`);
+  }
+};
+
+export const siteSettingsService = {
+  async getSettings() {
+    const items = await api.get('/site-settings');
+    return items.length > 0 ? items[0] : null;
+  },
+  async updateSettings(settings: any) {
+    const items = await api.get('/site-settings');
+    if (items.length > 0) {
+      return api.put(`/site-settings/${items[0].id}`, settings);
+    }
+    return api.post('/site-settings', settings);
+  }
+};
+
+export const seoSettingsService = {
+  async getSettings() {
+    const items = await api.get('/seo-settings');
+    return items.length > 0 ? items[0] : null;
+  },
+  async updateSettings(settings: any) {
+    const items = await api.get('/seo-settings');
+    if (items.length > 0) {
+      return api.put(`/seo-settings/${items[0].id}`, settings);
+    }
+    return api.post('/seo-settings', settings);
+  }
+};
+
+export const eventService = {
+  async getEvent() {
+    const items = await api.get('/events');
+    return items.length > 0 ? items[0] : null;
+  },
+  async updateEvent(eventData: any) {
+    const items = await api.get('/events');
+    if (items.length > 0) {
+      return api.put(`/events/${items[0].id}`, eventData);
+    }
+    return api.post('/events', eventData);
   }
 };

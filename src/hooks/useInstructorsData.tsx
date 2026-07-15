@@ -18,7 +18,10 @@ export interface InstructorBase {
   facebook?: string;
   twitter?: string;
   linkedin?: string;
+  tiktok?: string;
   featured?: boolean;
+  signature_url?: string;
+  connected_user?: string;
 }
 
 export const useInstructorsData = () => {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { optimizeUnsplashUrl } from '@/lib/utils';
 import { Award, Star, Users, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -57,16 +58,16 @@ const Instructors = () => {
   // Check if user is logged in as admin
   const currentUser = localStorage.getItem('currentUser');
   const isAdmin = currentUser ? JSON.parse(currentUser).role === 'admin' : false;
-  return <section id="instructors" className="py-20 bg-gradient-to-br from-yoga-sand to-yoga-cream">
+  return <section id="instructors" className="py-10 md:py-20 bg-gradient-to-br from-yoga-sand to-yoga-cream">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center mb-16">
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <h2 className="text-4xl lg:text-6xl font-bold text-yoga-forest">
+        <div className="text-center mb-6 md:mb-16">
+            <div className="flex items-center justify-center gap-4 mb-2 md:mb-6">
+              <h2 className="text-4xl lg:text-6xl font-bold text-yoga-forest mb-1 md:mb-2">
                 Meet Our <span className="text-yoga-terracotta">Instructors</span>
               </h2>
           </div>
-          <p className="text-xl text-yoga-forest/80 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-lg md:text-xl text-yoga-forest/80 max-w-3xl mx-auto leading-relaxed line-clamp-3 sm:line-clamp-none">
             Our team of certified and experienced yoga instructors are passionate about guiding you 
             on your wellness journey with wisdom, compassion, and expertise.
           </p>
@@ -79,8 +80,10 @@ const Instructors = () => {
               
               <div className="relative h-48 overflow-hidden shrink-0">
                 <img loading="lazy" 
-                  src={instructor.image} 
+                  src={optimizeUnsplashUrl(instructor.image, 300, 60)} 
                   alt={instructor.name}
+                  width={300}
+                  height={192}
                   className="w-full h-full object-cover"
                 />
               </div>

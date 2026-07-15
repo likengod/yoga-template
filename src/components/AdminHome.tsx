@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,14 +101,7 @@ const AdminHome = () => {
   };
 
   if (isLoading || !content) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yoga-sage mx-auto mb-4"></div>
-          <p className="text-yoga-forest">Loading home page content...</p>
-        </div>
-      </div>
-    );
+    return <AdminLoadingSpinner message="Loading home page content..." />;
   }
 
   return (
@@ -208,22 +202,24 @@ const AdminHome = () => {
 
               <div>
                 <Label htmlFor="heroImage">Hero Background Image URL</Label>
-                <div className="mt-1">
-                  <ImagePicker
-                    id="heroImage"
-                    value={content.hero.image}
-                    onChange={(val) => setContent({ ...content, hero: { ...content.hero, image: val } })}
-                  />
-                </div>
-                <div className="mt-2 border rounded-lg p-2 bg-gray-50">
-                  <img loading="lazy" 
-                    src={content.hero.image} 
-                    alt="Hero preview" 
-                    className="w-full h-40 object-cover rounded"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://i.postimg.cc/ZnnS7KY3/Whats-App-Image-2025-06-06-at-11-19-59-PM.jpg';
-                    }}
-                  />
+                <div className="mt-1 flex flex-col md:flex-row gap-4 items-start">
+                  <div className="flex-1 w-full">
+                    <ImagePicker
+                      id="heroImage"
+                      value={content.hero.image}
+                      onChange={(val) => setContent({ ...content, hero: { ...content.hero, image: val } })}
+                    />
+                  </div>
+                  <div className="w-full md:w-1/3 border rounded-md overflow-hidden bg-gray-50 h-10">
+                    <img loading="lazy" 
+                      src={content.hero.image} 
+                      alt="Hero preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://i.postimg.cc/ZnnS7KY3/Whats-App-Image-2025-06-06-at-11-19-59-PM.jpg';
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -295,22 +291,24 @@ const AdminHome = () => {
 
               <div>
                 <Label htmlFor="aboutImage">About Section Image URL</Label>
-                <div className="mt-1">
-                  <ImagePicker
-                    id="aboutImage"
-                    value={content.about.image}
-                    onChange={(val) => setContent({ ...content, about: { ...content.about, image: val } })}
-                  />
-                </div>
-                <div className="mt-2 border rounded-lg p-2 bg-gray-50">
-                  <img loading="lazy" 
-                    src={content.about.image} 
-                    alt="About preview" 
-                    className="w-full h-40 object-cover rounded"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://i.postimg.cc/ZnnS7KY3/Whats-App-Image-2025-06-06-at-11-19-59-PM.jpg';
-                    }}
-                  />
+                <div className="mt-1 flex flex-col md:flex-row gap-4 items-start">
+                  <div className="flex-1 w-full">
+                    <ImagePicker
+                      id="aboutImage"
+                      value={content.about.image}
+                      onChange={(val) => setContent({ ...content, about: { ...content.about, image: val } })}
+                    />
+                  </div>
+                  <div className="w-full md:w-1/3 border rounded-md overflow-hidden bg-gray-50 h-10">
+                    <img loading="lazy" 
+                      src={content.about.image} 
+                      alt="About preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://i.postimg.cc/ZnnS7KY3/Whats-App-Image-2025-06-06-at-11-19-59-PM.jpg';
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 

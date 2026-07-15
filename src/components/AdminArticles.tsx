@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -160,10 +161,7 @@ const AdminArticles = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-yoga-forest">Manage Articles</h2>
         </div>
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yoga-sage mx-auto mb-4"></div>
-          <p className="text-yoga-forest">Loading articles...</p>
-        </div>
+        <AdminLoadingSpinner message="Loading articles..." />
       </div>
     );
   }
@@ -175,12 +173,17 @@ const AdminArticles = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ['All', ...Array.from(new Set(articles.map(a => a.category)))];
+  const categories = ['All', ...Array.from(new Set(articles.map(a => a.category).filter(Boolean)))];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-yoga-forest">Manage Articles</h2>
+        <h2 className="text-2xl font-bold text-yoga-forest flex items-center gap-2">
+          <span>Manage Articles</span>
+          <span className="text-sm font-normal text-yoga-forest/60 bg-yoga-sage/10 px-2 py-0.5 rounded-full border border-yoga-sage/20">
+            {articles.length} total
+          </span>
+        </h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 

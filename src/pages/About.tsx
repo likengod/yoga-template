@@ -4,6 +4,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card } from '@/components/ui/card';
 
+import { aboutService } from '@/services/database';
+
 interface AboutContent {
   heroTitle: string;
   heroSubtitle: string;
@@ -44,10 +46,24 @@ const About = () => {
   });
 
   useEffect(() => {
-    const storedContent = localStorage.getItem('aboutContent');
-    if (storedContent) {
-      setContent(JSON.parse(storedContent));
-    }
+    const loadData = async () => {
+      try {
+        const data = await aboutService.getAboutContent();
+        if (data && data.heroTitle) {
+          setContent(data);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to fetch dynamic about content:', e);
+      }
+
+      const storedContent = localStorage.getItem('aboutContent');
+      if (storedContent) {
+        setContent(JSON.parse(storedContent));
+      }
+    };
+    
+    loadData();
   }, []);
 
   return (

@@ -75,7 +75,7 @@ const AdminArticleList: React.FC<AdminArticleListProps> = ({
                   <h3 className="text-base font-semibold text-yoga-forest leading-tight">{article.title}</h3>
                   {article.featured && (
                     <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">
-                      <Star size={10} className="fill-amber-500" /> Featured
+                      <Star size={10} className="fill-amber-500" /> PREMIUM
                     </span>
                   )}
                 </div>

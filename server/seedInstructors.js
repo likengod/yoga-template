@@ -1,3 +1,4 @@
+require('dotenv').config({ override: true });
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -11,7 +12,7 @@ const SEED_INSTRUCTORS = [
     certifications: JSON.stringify(['E-RYT 500', 'YACEP', 'Ayurvedic Wellness Coach']),
     rating: 4.9,
     students: '500+',
-    description: 'Priya has been practicing Hatha Yoga for over a decade. Her classes focus on mindful movement, breath awareness, and finding balance in body and mind. She brings a calm, nurturing energy to all her sessions.',
+    description: 'Priya has been practicing Hatha Yoga for over a decade. Her classes focus on mindful movement, breath awareness, and finding balance. She brings a calm, nurturing energy to all sessions.',
     image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800',
     email: 'priya@shaktiyoga.com',
     phone: '+91 9876543210',
@@ -148,8 +149,16 @@ const SEED_INSTRUCTORS = [
 async function main() {
   console.log('Seeding instructors...');
   for (const instructor of SEED_INSTRUCTORS) {
+    const handle = instructor.name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
     await prisma.instructor.create({
-      data: instructor
+      data: {
+        ...instructor,
+        instagram: `https://instagram.com/${handle}`,
+        facebook: `https://facebook.com/${handle}`,
+        linkedin: `https://linkedin.com/in/${handle}`,
+        twitter: `https://twitter.com/${handle}`,
+        tiktok: `https://tiktok.com/@${handle}`
+      }
     });
   }
   console.log('10 Instructors seeded successfully!');

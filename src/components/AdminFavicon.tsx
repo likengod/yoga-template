@@ -5,25 +5,44 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Image, Upload, RefreshCw } from 'lucide-react';
+import { Save, Image, Upload, RefreshCw, Info } from 'lucide-react';
+import { siteSettingsService } from '@/services/database';
 
 const AdminFavicon = () => {
   const { toast } = useToast();
   const [faviconUrl, setFaviconUrl] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
 
-  // Load favicon URL from localStorage on mount
+  // Load favicon URL from database on mount
   useEffect(() => {
-    const storedFaviconUrl = localStorage.getItem('faviconUrl');
-    if (storedFaviconUrl) {
-      setFaviconUrl(storedFaviconUrl);
-      setPreviewUrl(storedFaviconUrl);
-    } else {
-      // Default yoga-related favicon
-      const defaultFavicon = 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=32&h=32&q=80';
-      setFaviconUrl(defaultFavicon);
-      setPreviewUrl(defaultFavicon);
-    }
+    const loadFavicon = async () => {
+      try {
+        const data = await siteSettingsService.getSettings();
+        if (data && data.faviconUrl) {
+          setFaviconUrl(data.faviconUrl);
+          setPreviewUrl(data.faviconUrl);
+        } else {
+          const storedFaviconUrl = localStorage.getItem('faviconUrl');
+          if (storedFaviconUrl) {
+            setFaviconUrl(storedFaviconUrl);
+            setPreviewUrl(storedFaviconUrl);
+          } else {
+            const defaultFavicon = 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=32&h=32&q=80';
+            setFaviconUrl(defaultFavicon);
+            setPreviewUrl(defaultFavicon);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load favicon from database:', err);
+        const storedFaviconUrl = localStorage.getItem('faviconUrl');
+        if (storedFaviconUrl) {
+          setFaviconUrl(storedFaviconUrl);
+          setPreviewUrl(storedFaviconUrl);
+        }
+      }
+    };
+    
+    loadFavicon();
   }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +86,7 @@ const AdminFavicon = () => {
     document.head.appendChild(appleLink);
   };
 
-  const handleSaveFavicon = () => {
+  const handleSaveFavicon = async () => {
     if (!faviconUrl.trim()) {
       toast({
         variant: "destructive",
@@ -77,19 +96,43 @@ const AdminFavicon = () => {
       return;
     }
 
-    // Save to localStorage
-    localStorage.setItem('faviconUrl', faviconUrl);
-    
-    // Update the actual favicon
-    updateFavicon(faviconUrl);
-    
-    // Update preview
-    setPreviewUrl(faviconUrl);
-    
-    toast({
-      title: "Favicon Updated",
-      description: "The website favicon has been updated successfully."
-    });
+    try {
+      // Fetch existing site settings to preserve other fields
+      const existing = await siteSettingsService.getSettings();
+      const payload = existing ? {
+        ...existing,
+        faviconUrl: faviconUrl
+      } : {
+        faviconUrl: faviconUrl,
+        socialLinks: '{}'
+      };
+      
+      await siteSettingsService.updateSettings(payload);
+
+      // Save to localStorage fallback
+      localStorage.setItem('faviconUrl', faviconUrl);
+      
+      // Update the actual favicon
+      updateFavicon(faviconUrl);
+      
+      // Update preview
+      setPreviewUrl(faviconUrl);
+      
+      toast({
+        title: "Favicon Updated",
+        description: "The website favicon has been updated successfully on the database."
+      });
+    } catch (err) {
+      console.error('Failed to save favicon to database:', err);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Could not save favicon to database. Saved locally instead."
+      });
+      localStorage.setItem('faviconUrl', faviconUrl);
+      updateFavicon(faviconUrl);
+      setPreviewUrl(faviconUrl);
+    }
   };
 
   const handlePreview = () => {
@@ -103,26 +146,6 @@ const AdminFavicon = () => {
     setFaviconUrl(defaultFavicon);
     setPreviewUrl(defaultFavicon);
   };
-
-  // Yoga-related favicon suggestions
-  const yogaSuggestions = [
-    {
-      name: "Yoga Pose Silhouette",
-      url: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=32&h=32&q=80"
-    },
-    {
-      name: "Lotus Flower",
-      url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=32&h=32&q=80"
-    },
-    {
-      name: "Meditation Symbol",
-      url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=32&h=32&q=80"
-    },
-    {
-      name: "Om Symbol",
-      url: "https://images.unsplash.com/photo-1545389336-cf090694435e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=32&h=32&q=80"
-    }
-  ];
 
   return (
     <div className="space-y-6">
@@ -208,10 +231,12 @@ const AdminFavicon = () => {
           </div>
 
           {/* Important Note */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              We recommend image size (32x32px or 64x64px).
-            </p>
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-2">
+            <Info size={16} className="text-blue-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-blue-800">Recommended Favicon Size</p>
+              <p className="text-xs text-blue-700 mt-0.5">Use a square image: <strong>32×32px</strong> or <strong>64×64px</strong> in PNG, ICO or SVG format for best results across all browsers.</p>
+            </div>
           </div>
         </CardContent>
       </Card>

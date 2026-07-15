@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -278,10 +279,7 @@ const AdminFileManager = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-yoga-forest">File Manager</h2>
         </div>
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yoga-sage mx-auto mb-4"></div>
-          <p className="text-yoga-forest">Loading files...</p>
-        </div>
+        <AdminLoadingSpinner message="Loading files..." />
       </div>
     );
   }

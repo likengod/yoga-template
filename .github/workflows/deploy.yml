@@ -1,0 +1,70 @@
+name: Deploy App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'Manual update via Admin Panel'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Build Frontend
+        run: npm run build
+        
+      - name: Install Server Dependencies
+        run: cd server && npm ci
+        
+      # Deployment step to a standard VPS via SSH using appleboy/ssh-action
+      # IMPORTANT: To make this work, add these secrets to your GitHub Repository (Settings -> Secrets and variables -> Actions):
+      # - SERVER_HOST (e.g. 192.168.1.10)
+      # - SERVER_USERNAME (e.g. root)
+      # - SERVER_SSH_KEY (Your private SSH key)
+      # - SERVER_PORT (e.g. 22)
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || '22' }}
+          script: |
+            # Navigate to the app directory
+            cd /home/shaktiyogaraai/htdocs/shaktiyogaraai.com
+            
+            # Pull the latest changes from the repository
+            git pull origin main
+            
+            # Install dependencies and build
+            npm install --omit=dev --legacy-peer-deps
+            npm run build
+            
+            cd server
+            npm install --omit=dev --legacy-peer-deps
+            
+            # Push database schema updates
+            npx prisma generate
+            npx prisma db push --accept-data-loss
+            
+            # Restart the server using pm2
+            cd ..
+            pm2 restart shakti-yoga-server || pm2 start ecosystem.config.js
+            pm2 save

@@ -214,7 +214,7 @@ const Articles = () => {
                 <Card key={article.id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
                   {article.featured && (
                     <div className="absolute top-3 right-3 z-10 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-400 px-2 py-1 rounded-full shadow-sm">
-                      <Star size={10} className="fill-amber-700" /> Featured
+                      <Star size={10} className="fill-amber-700" /> PREMIUM
                     </div>
                   )}
                   <div className="h-48 overflow-hidden">
@@ -250,6 +250,7 @@ const Articles = () => {
                         description={article.excerpt}
                         url={`${window.location.origin}/articles/${article.id}`}
                         iconOnly
+                        className="bg-white border-white/60 text-yoga-forest hover:bg-white/90 hover:text-yoga-forest shadow-sm h-8 w-8 rounded-full"
                       />
                     </div>
                   </div>

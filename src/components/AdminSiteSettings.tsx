@@ -10,74 +10,127 @@ import { SiteSettingsData, defaultSiteSettings } from '@/config/siteSettings';
 import AdminSEO from './AdminSEO';
 import GeneralSettingsTab from './admin/settings/GeneralSettingsTab';
 import IntegrationSettingsTab from './admin/settings/IntegrationSettingsTab';
+import { siteSettingsService } from '@/services/database';
 
 const AdminSiteSettings = () => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<SiteSettingsData>(defaultSiteSettings);
 
   useEffect(() => {
-    const stored = localStorage.getItem('siteSettings');
-    if (stored) {
+    const loadSettings = async () => {
       try {
-        setSettings({ ...defaultSiteSettings, ...JSON.parse(stored) });
-      } catch (e) {
-        console.error("Failed to parse site settings from local storage", e);
+        const data = await siteSettingsService.getSettings();
+        if (data && data.socialLinks) {
+          try {
+            const parsed = JSON.parse(data.socialLinks);
+            setSettings({
+              ...defaultSiteSettings,
+              ...parsed,
+              siteName: data.businessName || parsed.siteName || defaultSiteSettings.siteName,
+              contactEmail: data.businessEmail || parsed.contactEmail || defaultSiteSettings.contactEmail,
+              contactPhone: data.businessPhone || parsed.contactPhone || defaultSiteSettings.contactPhone
+            });
+          } catch (e) {
+            setSettings(prev => ({
+              ...prev,
+              siteName: data.businessName || prev.siteName,
+              contactEmail: data.businessEmail || prev.contactEmail,
+              contactPhone: data.businessPhone || prev.contactPhone
+            }));
+          }
+        } else {
+          // Fallback to localStorage
+          const stored = localStorage.getItem('siteSettings');
+          if (stored) {
+            setSettings({ ...defaultSiteSettings, ...JSON.parse(stored) });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load site settings from database:', err);
+        const stored = localStorage.getItem('siteSettings');
+        if (stored) {
+          setSettings({ ...defaultSiteSettings, ...JSON.parse(stored) });
+        }
       }
-    }
+    };
+
+    loadSettings();
   }, []);
 
-  const handleChange = (field: keyof SiteSettingsData, value: string) => {
+  const handleChange = (field: keyof SiteSettingsData, value: any) => {
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    localStorage.setItem('siteSettings', JSON.stringify(settings));
-    window.dispatchEvent(new Event('siteSettingsUpdated'));
-    
-    // Update Meta tags for SEO globally
-    document.title = settings.siteName;
-    let metaDescription = document.querySelector('meta[name="description"]');
-    if (!metaDescription) {
-      metaDescription = document.createElement('meta');
-      metaDescription.setAttribute('name', 'description');
-      document.head.appendChild(metaDescription);
-    }
-    metaDescription.setAttribute('content', settings.metaDescription);
-    
-    let ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute('content', settings.siteName);
-    
-    let ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) ogDesc.setAttribute('content', settings.metaDescription);
+  const handleSave = async () => {
+    try {
+      const payload = {
+        logoUrl: settings.logoUrl || '',
+        faviconUrl: settings.faviconUrl || '',
+        businessName: settings.siteName || '',
+        businessEmail: settings.contactEmail || '',
+        businessPhone: settings.contactPhone || '',
+        socialLinks: JSON.stringify(settings)
+      };
+      
+      await siteSettingsService.updateSettings(payload);
 
-    let googleVerification = document.querySelector('meta[name="google-site-verification"]');
-    if (settings.googleSiteVerification) {
-      if (!googleVerification) {
-        googleVerification = document.createElement('meta');
-        googleVerification.setAttribute('name', 'google-site-verification');
-        document.head.appendChild(googleVerification);
+      localStorage.setItem('siteSettings', JSON.stringify(settings));
+      window.dispatchEvent(new Event('siteSettingsUpdated'));
+      
+      // Update Meta tags for SEO globally
+      document.title = settings.siteName;
+      let metaDescription = document.querySelector('meta[name="description"]');
+      if (!metaDescription) {
+        metaDescription = document.createElement('meta');
+        metaDescription.setAttribute('name', 'description');
+        document.head.appendChild(metaDescription);
       }
-      googleVerification.setAttribute('content', settings.googleSiteVerification);
-    } else if (googleVerification) {
-      googleVerification.remove();
-    }
+      metaDescription.setAttribute('content', settings.metaDescription);
+      
+      let ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) ogTitle.setAttribute('content', settings.siteName);
+      
+      let ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc) ogDesc.setAttribute('content', settings.metaDescription);
 
-    let bingVerification = document.querySelector('meta[name="msvalidate.01"]');
-    if (settings.bingSiteVerification) {
-      if (!bingVerification) {
-        bingVerification = document.createElement('meta');
-        bingVerification.setAttribute('name', 'msvalidate.01');
-        document.head.appendChild(bingVerification);
+      let googleVerification = document.querySelector('meta[name="google-site-verification"]');
+      if (settings.googleSiteVerification) {
+        if (!googleVerification) {
+          googleVerification = document.createElement('meta');
+          googleVerification.setAttribute('name', 'google-site-verification');
+          document.head.appendChild(googleVerification);
+        }
+        googleVerification.setAttribute('content', settings.googleSiteVerification);
+      } else if (googleVerification) {
+        googleVerification.remove();
       }
-      bingVerification.setAttribute('content', settings.bingSiteVerification);
-    } else if (bingVerification) {
-      bingVerification.remove();
-    }
 
-    toast({
-      title: 'Settings Saved',
-      description: 'Your site settings have been updated successfully.',
-    });
+      let bingVerification = document.querySelector('meta[name="msvalidate.01"]');
+      if (settings.bingSiteVerification) {
+        if (!bingVerification) {
+          bingVerification = document.createElement('meta');
+          bingVerification.setAttribute('name', 'msvalidate.01');
+          document.head.appendChild(bingVerification);
+        }
+        bingVerification.setAttribute('content', settings.bingSiteVerification);
+      } else if (bingVerification) {
+        bingVerification.remove();
+      }
+
+      toast({
+        title: 'Settings Saved',
+        description: 'Your site settings have been updated successfully on the database.',
+      });
+    } catch (err) {
+      console.error('Failed to save site settings to database:', err);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Could not save settings to database. Saved locally instead."
+      });
+      localStorage.setItem('siteSettings', JSON.stringify(settings));
+      window.dispatchEvent(new Event('siteSettingsUpdated'));
+    }
   };
 
   return (

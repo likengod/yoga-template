@@ -13,7 +13,7 @@ const Classes = () => {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="pt-32">
+      <main className="pt-20 md:pt-32">
         <ClassesSection />
       </main>
       <Footer />

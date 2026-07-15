@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const getHeaders = (hasBody = false) => {
   const token = localStorage.getItem('adminToken');
@@ -8,22 +8,39 @@ const getHeaders = (hasBody = false) => {
   return headers;
 };
 
+const handleAuthError = (status: number) => {
+  if (status === 401 || status === 403) {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('adminToken');
+    if (window.location.pathname.startsWith('/admin') || window.location.pathname.includes('admin')) {
+      window.location.href = '/?session=expired';
+    }
+  }
+};
+
 export const api = {
   async get(endpoint: string) {
     const response = await fetch(`${API_URL}${endpoint}`, {
       headers: getHeaders()
     });
-    if (!response.ok) throw new Error(`GET ${endpoint} failed`);
+    if (!response.ok) {
+      handleAuthError(response.status);
+      throw new Error(`GET ${endpoint} failed`);
+    }
     return response.json();
   },
 
   async post(endpoint: string, body: any) {
+    const isFormData = body instanceof FormData;
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'POST',
-      headers: getHeaders(true),
-      body: JSON.stringify(body)
+      headers: isFormData ? getHeaders(false) : getHeaders(true),
+      body: isFormData ? body : JSON.stringify(body)
     });
-    if (!response.ok) throw new Error(`POST ${endpoint} failed`);
+    if (!response.ok) {
+      handleAuthError(response.status);
+      throw new Error(`POST ${endpoint} failed`);
+    }
     return response.json();
   },
 
@@ -33,7 +50,10 @@ export const api = {
       headers: getHeaders(true),
       body: JSON.stringify(body)
     });
-    if (!response.ok) throw new Error(`PUT ${endpoint} failed`);
+    if (!response.ok) {
+      handleAuthError(response.status);
+      throw new Error(`PUT ${endpoint} failed`);
+    }
     return response.json();
   },
 
@@ -42,7 +62,10 @@ export const api = {
       method: 'DELETE',
       headers: getHeaders()
     });
-    if (!response.ok) throw new Error(`DELETE ${endpoint} failed`);
+    if (!response.ok) {
+      handleAuthError(response.status);
+      throw new Error(`DELETE ${endpoint} failed`);
+    }
     return response.json();
   }
 };

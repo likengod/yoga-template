@@ -5,6 +5,7 @@ export interface OnlineClass {
   classStarting?: string;
   description: string;
   price: string;
+  priceUSD?: string;
   duration: string;
   capacity: string;
   schedule: string;

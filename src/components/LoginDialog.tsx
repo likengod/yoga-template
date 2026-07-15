@@ -12,9 +12,13 @@ interface LoginDialogProps {
     role: string;
     id: string;
   }) => void;
+  triggerClassName?: string;
+  triggerText?: string;
 }
 const LoginDialog = ({
-  onLoginSuccess
+  onLoginSuccess,
+  triggerClassName,
+  triggerText
 }: LoginDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loginData, setLoginData] = useState({
@@ -34,93 +38,61 @@ const LoginDialog = ({
     toast
   } = useToast();
 
-  // Demo credentials - now includes user IDs and expanded roles
-  const validCredentials = [{
-    id: '1',
-    username: 'admin',
-    password: 'admin123',
-    role: 'admin',
-    email: 'admin@example.com'
-  }, {
-    id: '2',
-    username: 'yoga_admin',
-    password: 'shakti2024',
-    role: 'admin',
-    email: 'yoga_admin@example.com'
-  }, {
-    id: '3',
-    username: 'superadmin',
-    password: 'super123',
-    role: 'superadmin',
-    email: 'superadmin@example.com'
-  }, {
-    id: '4',
-    username: 'instructor',
-    password: 'teacher123',
-    role: 'user',
-    email: 'instructor@example.com'
-  }, {
-    id: '5',
-    username: 'student',
-    password: 'student123',
-    role: 'user',
-    email: 'student@example.com'
-  }];
+  // Authentication runs only against the server database in production
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Check stored users first
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const allUsers = [...validCredentials, ...storedUsers];
-    const user = allUsers.find(cred => cred.username === loginData.username && cred.password === loginData.password);
-    if (user) {
-      if (user.role === 'admin' || user.role === 'superadmin') {
-        try {
-          const res = await fetch('http://localhost:3001/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: loginData.password })
+    try {
+      // Authenticate against backend
+      const loginUrl = '/api/login';
+        
+      const res = await fetch(loginUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginData.username, password: loginData.password })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.token && data.user) {
+          localStorage.setItem('adminToken', data.token);
+          localStorage.setItem('currentUser', JSON.stringify(data.user));
+          toast({
+            title: "Welcome back! 🧘‍♀️",
+            description: `Successfully logged in as ${data.user.username}`
           });
-          const data = await res.json();
-          if (data.success && data.token) {
-            localStorage.setItem('adminToken', data.token);
-          }
-        } catch (err) {
-          console.error('Backend login failed:', err);
+          onLoginSuccess(data.user);
+          setOpen(false);
+          setLoginData({
+            username: '',
+            password: ''
+          });
+          setIsLoading(false);
+          return;
         }
       }
 
-      // Store user in localStorage
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      toast({
-        title: "Welcome back! 🧘‍♀️",
-        description: `Successfully logged in as ${user.username}`
-      });
-      onLoginSuccess(user);
-      setOpen(false);
-      setLoginData({
-        username: '',
-        password: ''
-      });
-    } else {
+      // If backend login fails
       toast({
         variant: "destructive",
         title: "Login Failed",
         description: "Invalid username or password. Please try again."
       });
+    } catch (err) {
+      console.error('Authentication check failed:', err);
+      toast({
+        variant: "destructive",
+        title: "Login Error",
+        description: "An error occurred during login. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Validation
     if (signupData.password !== signupData.confirmPassword) {
@@ -142,51 +114,66 @@ const LoginDialog = ({
       return;
     }
 
-    // Check if username already exists
-    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const allUsers = [...validCredentials, ...storedUsers];
-    if (allUsers.some(user => user.username === signupData.username)) {
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: signupData.username,
+          email: signupData.email,
+          password: signupData.password
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          if (data.token) {
+            localStorage.setItem('adminToken', data.token);
+          }
+          localStorage.setItem('currentUser', JSON.stringify(data.user));
+          toast({
+            title: "Welcome to SHAKTI YOGA THEME! 🙏",
+            description: `Account created successfully for ${data.user.username}`
+          });
+          onLoginSuccess(data.user);
+          setOpen(false);
+          setSignupData({
+            username: '',
+            email: '',
+            password: '',
+            confirmPassword: ''
+          });
+          return;
+        }
+      }
+
+      const errData = await res.json();
       toast({
         variant: "destructive",
-        title: "Username Taken",
-        description: "This username already exists. Please choose another."
+        title: "Registration Failed",
+        description: errData.error || "Failed to create account. Please try again."
       });
+    } catch (err) {
+      console.error('Registration failed:', err);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred during signup."
+      });
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // Create new user
-    const newUser = {
-      id: Date.now().toString(),
-      username: signupData.username,
-      email: signupData.email,
-      password: signupData.password,
-      role: 'user' // Default role for new signups
-    };
-
-    // Store user
-    const updatedUsers = [...storedUsers, newUser];
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
-    toast({
-      title: "Welcome to SHAKTI YOGA THEME! 🙏",
-      description: `Account created successfully for ${newUser.username}`
-    });
-    onLoginSuccess(newUser);
-    setOpen(false);
-    setSignupData({
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    });
-    setIsLoading(false);
   };
   return <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="hidden md:inline-flex border-yoga-sage text-yoga-forest hover:bg-yoga-sage hover:text-white">
+        <Button 
+          variant={triggerClassName ? "default" : "outline"} 
+          size="sm" 
+          className={triggerClassName || "hidden md:inline-flex border-yoga-sage text-yoga-forest hover:bg-yoga-sage hover:text-white"}
+        >
           <LogIn size={16} className="mr-2" />
-          Login
+          {triggerText || "Login"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-yoga-cream to-white border-yoga-sage/20">

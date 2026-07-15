@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,14 +81,7 @@ const AdminContact = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yoga-sage mx-auto mb-4"></div>
-          <p className="text-yoga-forest">Loading contact content...</p>
-        </div>
-      </div>
-    );
+    return <AdminLoadingSpinner message="Loading contact content..." />;
   }
 
   return (

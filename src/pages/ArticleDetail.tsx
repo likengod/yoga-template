@@ -186,6 +186,8 @@ const ArticleDetail = () => {
                     title={article.title}
                     description={article.excerpt}
                     url={window.location.href}
+                    iconOnly
+                    className="bg-white border-white/60 text-yoga-forest hover:bg-white/90 hover:text-yoga-forest shadow-sm h-8 w-8 rounded-full"
                   />
                 </div>
               </div>

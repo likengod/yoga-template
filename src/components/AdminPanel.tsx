@@ -1,33 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Save, Upload, Edit, FileText, Image, MessageSquare, Users, Calendar, BarChart3, Home, Settings, Eye, UserCog, Plus, Trash2, X, RefreshCw, Trash, Search, Video, ShoppingCart, DownloadCloud, FolderOpen } from 'lucide-react';
+import { Calendar, FileText, Home, Settings, RefreshCw, Trash, Award, BarChart3, UserCog, Users, Video, MessageSquare, FolderOpen, Image, ShoppingCart, Search, Bookmark, BookOpen } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import UserMenu from '@/components/UserMenu';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import AdminArticles from './AdminArticles';
-import AdminGallery from './AdminGallery';
-import AdminPopups from './AdminPopups';
-import AdminAbout from './AdminAbout';
-import AdminContact from './AdminContact';
-import AdminInstructors from './AdminInstructors';
-import AdminBookings from './AdminBookings';
-import AdminDashboard from './AdminDashboard';
-import AdminUsers from './AdminUsers';
-import AdminSEO from './AdminSEO';
-import AdminClasses from './AdminClasses';
-import AdminEvents from './AdminEvents';
-import AdminProducts from './AdminProducts';
-import AdminUpdate from './AdminUpdate';
-import AdminSiteSettings from './AdminSiteSettings';
-import AdminFileManager from './AdminFileManager';
-import AdminHome from './AdminHome';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
+
+const AdminArticles = lazy(() => import('./AdminArticles'));
+const AdminGallery = lazy(() => import('./AdminGallery'));
+const AdminPopups = lazy(() => import('./AdminPopups'));
+const AdminAbout = lazy(() => import('./AdminAbout'));
+const AdminContact = lazy(() => import('./AdminContact'));
+const AdminInstructors = lazy(() => import('./AdminInstructors'));
+const AdminBookings = lazy(() => import('./AdminBookings'));
+const AdminDashboard = lazy(() => import('./AdminDashboard'));
+const AdminUsers = lazy(() => import('./AdminUsers'));
+const AdminSEO = lazy(() => import('./AdminSEO'));
+const AdminClasses = lazy(() => import('./AdminClasses'));
+const AdminEvents = lazy(() => import('./AdminEvents'));
+const AdminProducts = lazy(() => import('./AdminProducts'));
+const AdminUpdate = lazy(() => import('./AdminUpdate'));
+const AdminSiteSettings = lazy(() => import('./AdminSiteSettings'));
+const AdminFileManager = lazy(() => import('./AdminFileManager'));
+const AdminHome = lazy(() => import('./AdminHome'));
+const AdminPages = lazy(() => import('./AdminPages'));
+const AdminCertificates = lazy(() => import('./AdminCertificates'));
+const AdminFavicon = lazy(() => import('./AdminFavicon'));
+const AdminCourses = lazy(() => import('./AdminCourses'));
 
 interface AdminPanelProps {
   currentUser: {
@@ -41,7 +42,8 @@ interface AdminPanelProps {
 const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const isInstructor = currentUser.role?.toLowerCase() === 'instructor' || currentUser.role?.toLowerCase() === 'instructors';
+  const [activeTab, setActiveTab] = useState(isInstructor ? 'bookings' : 'dashboard');
 
   const handleClearCache = () => {
     // Clear all website cache
@@ -93,6 +95,10 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       icon: Video,
       id: "classes"
     }, {
+      title: "Video Courses",
+      icon: BookOpen,
+      id: "admin-courses"
+    }, {
       title: "Events",
       icon: Calendar,
       id: "events"
@@ -111,6 +117,10 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       title: "Contact",
       icon: MessageSquare,
       id: "contact"
+    }, {
+      title: "Pages Edit",
+      icon: FileText,
+      id: "pages"
     }]
   }, {
     title: "Media & Content",
@@ -134,6 +144,10 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       title: "Popups",
       icon: MessageSquare,
       id: "popups"
+    }, {
+      title: "Certificates",
+      icon: Award,
+      id: "certificates"
     }]
   }, {
     title: "SEO & Settings",
@@ -146,6 +160,10 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       icon: Search,
       id: "seo"
     }, {
+      title: "Favicon",
+      icon: Bookmark,
+      id: "favicon"
+    }, {
       title: "System Updates",
       icon: RefreshCw,
       id: "updates"
@@ -153,7 +171,12 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
   }];
 
   const renderContent = () => {
-    switch (activeTab) {
+    const allowedTabs = ['bookings', 'articles'];
+    const tabToRender = isInstructor 
+      ? (allowedTabs.includes(activeTab) ? activeTab : 'bookings')
+      : activeTab;
+
+    switch (tabToRender) {
       case 'dashboard':
         return <div className="space-y-6">
             <AdminDashboard />
@@ -187,7 +210,7 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       case 'instructors':
         return <AdminInstructors />;
       case 'bookings':
-        return <AdminBookings />;
+        return <AdminBookings isInstructor={isInstructor} currentUsername={currentUser.username} />;
       case 'articles':
         return <AdminArticles />;
       case 'gallery':
@@ -198,6 +221,8 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
         return <AdminProducts />;
       case 'popups':
         return <AdminPopups />;
+      case 'certificates':
+        return <AdminCertificates />;
       case 'about':
         return <AdminAbout />;
       case 'contact':
@@ -210,10 +235,16 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
         return <AdminSEO />;
       case 'classes':
         return <AdminClasses />;
+      case 'admin-courses':
+        return <AdminCourses />;
       case 'events':
         return <AdminEvents />;
+      case 'pages':
+        return <AdminPages />;
       case 'updates':
         return <AdminUpdate />;
+      case 'favicon':
+        return <AdminFavicon />;
       default:
         return <AdminDashboard />;
     }
@@ -228,12 +259,21 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
                 <div className="w-10 h-10 shrink-0">
                   <img loading="lazy" src="/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png" alt="Logo" className="w-full h-full object-contain" />
                 </div>
-                <h1 className="text-lg font-bold text-yoga-forest leading-tight whitespace-nowrap truncate">SHAKTI YOGA THEME</h1>
+                <h1 className="text-lg font-bold text-yoga-forest leading-tight whitespace-nowrap truncate">SHAKTI YOGA</h1>
               </div>
               <p className="text-sm text-yoga-forest/70 font-medium">Admin Panel</p>
             </div>
             
-            {sidebarItems.map((section, index) => <SidebarGroup key={index}>
+            {(isInstructor 
+              ? [{
+                  title: "Management",
+                  items: [
+                    { title: "Bookings", icon: Calendar, id: "bookings" },
+                    { title: "Articles", icon: FileText, id: "articles" }
+                  ]
+                }] 
+              : sidebarItems
+            ).map((section, index) => <SidebarGroup key={index}>
                 {section.title && !section.items && <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton onClick={() => setActiveTab(section.id)} isActive={activeTab === section.id}>
@@ -283,7 +323,9 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
             </div>
           </header>
           <div className="flex-1 p-4 md:p-6 overflow-x-hidden">
-            {renderContent()}
+            <Suspense fallback={<AdminLoadingSpinner />}>
+              {renderContent()}
+            </Suspense>
           </div>
         </main>
       </div>

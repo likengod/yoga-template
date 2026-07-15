@@ -10,6 +10,7 @@ export interface ProductFormData {
   name: string;
   description: string;
   price: string;
+  priceUSD: string;
   image_url: string;
   category: string;
   whatsapp_message: string;
@@ -31,7 +32,7 @@ interface ProductFormProps {
 const ProductForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }: ProductFormProps) => {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label htmlFor="name">Product Name *</Label>
           <Input
@@ -53,6 +54,18 @@ const ProductForm = ({ formData, setFormData, onSubmit, onCancel, isEditing }: P
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
             placeholder="0.00"
             required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="priceUSD">Price (USD)</Label>
+          <Input
+            id="priceUSD"
+            type="number"
+            step="0.01"
+            value={formData.priceUSD || ''}
+            onChange={(e) => setFormData({ ...formData, priceUSD: e.target.value })}
+            placeholder="0.00"
           />
         </div>
       </div>

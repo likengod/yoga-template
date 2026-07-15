@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Image as ImageIcon, Check, Upload } from 'lucide-react';
 import { fileService, FileItem } from '@/services/database';
@@ -127,7 +128,12 @@ export default function ImagePicker({ value, onChange, id, placeholder }: ImageP
         </DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader className="flex flex-row items-center justify-between mt-2">
-            <DialogTitle>Select an Image from File Manager</DialogTitle>
+            <div>
+              <DialogTitle>Select an Image from File Manager</DialogTitle>
+              <DialogDescription className="sr-only">
+                Browse through your uploaded images or upload a new one to select.
+              </DialogDescription>
+            </div>
             <div>
               <input
                 type="file"
@@ -150,9 +156,7 @@ export default function ImagePicker({ value, onChange, id, placeholder }: ImageP
           </DialogHeader>
           
           {isLoading ? (
-            <div className="flex justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            </div>
+            <AdminLoadingSpinner message="Loading files..." />
           ) : files.length === 0 ? (
             <div className="text-center p-8 text-muted-foreground">
               No images found in File Manager. Please upload some first from the File Manager tab.

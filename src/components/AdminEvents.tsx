@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Plus, Trash2, Calendar, Clock, MapPin, Users, Link as LinkIcon, Edit } from 'lucide-react';
 import ImagePicker from './ImagePicker';
+import { eventService } from '@/services/database';
 
 interface Event {
   id: string;
@@ -42,23 +43,16 @@ const AdminEvents = () => {
   });
 
   useEffect(() => {
-    // Load event from localStorage
-    const stored = localStorage.getItem('eventData');
-    if (stored) {
-      setEvent(JSON.parse(stored));
-    } else {
-      // Set default event with new course details
-      const defaultEvent: Event = {
-        id: '1',
-        title: '5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course',
-        description: `Course Overview:
+    const defaultEvent: Event = {
+      id: '1',
+      title: '5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course',
+      description: `Course Overview:
 
 Dive into a powerful spiritual journey with this intensive 5-day course focused on the 7 Chakras and Kundalini awakening. This course blends guided meditation, chakra balancing, pranayama, Kundalini kriyas, Pelvic floor flexibility Yoga and sound healing to activate and align your inner energy system.
 
 Each day, we focus on multiple chakras in sequence, unlocking physical, emotional, and energetic healing.
 
 ⸻
-
 🔮 What You Will Experience:
 	•	Daily guided chakra meditations
 	•	Kundalini energy awakening practices
@@ -69,7 +63,6 @@ Each day, we focus on multiple chakras in sequence, unlocking physical, emotiona
 	•	Energy cleansing & grounding techniques
 
 ⸻
-
 🔥 Daily Chakra Flow (Example Schedule):
 
 Day 1: Root + Sacral Chakras
@@ -88,7 +81,6 @@ Day 5: Complete 7 Chakra Activation + Kundalini Flow
 Focus: Full-body energy awakening & integration
 
 ⸻
-
 📦 Course Includes:
 	•	Live Zoom classes 
 	•	Daily energy practice PDFs
@@ -96,7 +88,6 @@ Focus: Full-body energy awakening & integration
 	•	Completion Certificate
 
 ⸻
-
 👥 Who Can Join?
 	•	Beginners & intermediate meditators
 	•	Yoga practitioners & wellness seekers
@@ -104,35 +95,83 @@ Focus: Full-body energy awakening & integration
 	•	Healers, coaches, and spiritual guides
 
 ⸻
-
 📝 Registration Now Open!
 
 👉 Limited seats available for personal attention
 👉 Click below to reserve your spot`,
-        date: '2025-07-21',
-        time: 'Morning: 5:00 AM – 6:00 AM\nEvening: 5:00 PM – 6:00 PM\n(Join as per your convenience)',
-        location: 'Online via Zoom',
-        price: '₹7500 INR / $120 USD',
-        image: 'https://i.postimg.cc/VvCNSCSz/5-Day-Meditation.webp',
-        capacity: '21 participants',
-        joinUrl: 'https://wa.me/918777816410?text=Hi! I would like to join the 5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course. Please send me the details.',
-        buttonText: 'Event Details',
-        buttonUrl: '/admin'
-      };
-      setEvent(defaultEvent);
-    }
+      date: '2025-07-21',
+      time: 'Morning: 5:00 AM – 6:00 AM\nEvening: 5:00 PM – 6:00 PM\n(Join as per your convenience)',
+      location: 'Online via Zoom',
+      price: '₹7500 INR / $120 USD',
+      image: 'https://i.postimg.cc/VvCNSCSz/5-Day-Meditation.webp',
+      capacity: '21 participants',
+      joinUrl: 'https://wa.me/918777816410?text=Hi! I would like to join the 5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course. Please send me the details.',
+      buttonText: 'Event Details',
+      buttonUrl: '/admin'
+    };
+
+    const loadEvent = async () => {
+      try {
+        const data = await eventService.getEvent();
+        if (data) {
+          setEvent(data);
+        } else {
+          const stored = localStorage.getItem('eventData');
+          if (stored) {
+            setEvent(JSON.parse(stored));
+          } else {
+            setEvent(defaultEvent);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load event from database:', err);
+        const stored = localStorage.getItem('eventData');
+        if (stored) {
+          setEvent(JSON.parse(stored));
+        } else {
+          setEvent(defaultEvent);
+        }
+      }
+    };
+
+    loadEvent();
   }, []);
 
-  const handleSave = () => {
-    localStorage.setItem('eventData', JSON.stringify(event));
-    
-    // Trigger storage event to update components
-    window.dispatchEvent(new Event('storage'));
-    
-    toast({
-      title: "Event Updated",
-      description: "The event details have been updated successfully."
-    });
+  const handleSave = async () => {
+    try {
+      const payload = {
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        price: event.price,
+        image: event.image,
+        capacity: event.capacity,
+        joinUrl: event.joinUrl,
+        buttonText: event.buttonText || '',
+        buttonUrl: event.buttonUrl || ''
+      };
+      
+      await eventService.updateEvent(payload);
+      
+      localStorage.setItem('eventData', JSON.stringify(event));
+      window.dispatchEvent(new Event('storage'));
+      
+      toast({
+        title: "Event Updated",
+        description: "The event details have been updated successfully on the database."
+      });
+    } catch (err) {
+      console.error('Failed to save event to database:', err);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: "Could not save event to the database. Saved locally instead."
+      });
+      localStorage.setItem('eventData', JSON.stringify(event));
+      window.dispatchEvent(new Event('storage'));
+    }
   };
 
   const handleInputChange = (field: keyof Event, value: string) => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -67,25 +68,6 @@ const AdminGallery = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const getImageDimensions = (url: string): Promise<{width: number, height: number, size: string}> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        // For existing images, we can't get file size, so we estimate based on dimensions
-        const estimatedSize = Math.round((img.width * img.height * 3) / 1024); // Rough estimation
-        resolve({
-          width: img.width,
-          height: img.height,
-          size: estimatedSize > 1024 ? `~${(estimatedSize/1024).toFixed(1)} MB` : `~${estimatedSize} KB`
-        });
-      };
-      img.onerror = () => {
-        resolve({ width: 0, height: 0, size: 'Unknown' });
-      };
-      img.src = url;
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,10 +175,7 @@ const AdminGallery = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-yoga-forest">Manage Gallery</h2>
         </div>
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yoga-sage mx-auto mb-4"></div>
-          <p className="text-yoga-forest">Loading gallery images...</p>
-        </div>
+        <AdminLoadingSpinner message="Loading gallery images..." />
       </div>
     );
   }

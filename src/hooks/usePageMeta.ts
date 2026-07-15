@@ -6,6 +6,7 @@ interface PageMeta {
   image?: string;
   url?: string;
   type?: 'website' | 'article' | 'product';
+  schemas?: object[]; // Accept array of custom JSON-LD schema objects
 }
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80';
@@ -22,7 +23,7 @@ function setMeta(property: string, content: string, isName = false) {
   el.setAttribute('content', content);
 }
 
-export function usePageMeta({ title, description, image, url, type = 'website' }: PageMeta) {
+export function usePageMeta({ title, description, image, url, type = 'website', schemas }: PageMeta) {
   useEffect(() => {
     const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
     const finalImage = image || DEFAULT_IMAGE;
@@ -49,6 +50,19 @@ export function usePageMeta({ title, description, image, url, type = 'website' }
     setMeta('twitter:description', finalDescription, true);
     setMeta('twitter:image', finalImage, true);
 
+    // Inject JSON-LD Schema
+    const scriptTags: HTMLScriptElement[] = [];
+    if (schemas && schemas.length > 0) {
+      schemas.forEach((schemaObj, index) => {
+        const script = document.createElement('script');
+        script.id = `jsonld-schema-${index}`;
+        script.type = 'application/ld+json';
+        script.text = JSON.stringify(schemaObj);
+        document.head.appendChild(script);
+        scriptTags.push(script);
+      });
+    }
+
     // Cleanup: restore defaults when component unmounts
     return () => {
       document.title = `${SITE_NAME} - Find Your Inner Peace`;
@@ -57,6 +71,13 @@ export function usePageMeta({ title, description, image, url, type = 'website' }
       setMeta('og:image', DEFAULT_IMAGE);
       setMeta('og:url', window.location.origin);
       setMeta('og:type', 'website');
+      
+      // Remove injected scripts
+      scriptTags.forEach(script => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      });
     };
-  }, [title, description, image, url, type]);
+  }, [title, description, image, url, type, schemas]);
 }

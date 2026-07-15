@@ -111,3 +111,23 @@ export const classesApi = {
     return api.delete(`/classes/${id}`);
   }
 };
+
+export const usersApi = {
+  async getAll() {
+    try {
+      const data = await api.get('/users');
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  },
+  async create(user: any) {
+    return api.post('/users', user);
+  },
+  async update(id: string, user: any) {
+    return api.put(`/users/${id}`, user);
+  },
+  async remove(id: string) {
+    return api.delete(`/users/${id}`);
+  }
+};

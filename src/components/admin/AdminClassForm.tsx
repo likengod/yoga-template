@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Save, X } from 'lucide-react';
+import { Save, X, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { OnlineClass } from '@/types/admin';
+import { useInstructorsData } from '@/hooks/useInstructorsData';
 
 interface AdminClassFormProps {
   initialData: OnlineClass | null;
@@ -17,6 +18,8 @@ interface AdminClassFormProps {
 
 const AdminClassForm: React.FC<AdminClassFormProps> = ({ initialData, onSubmit, onCancel }) => {
   const { toast } = useToast();
+  const { instructors, isLoading: isLoadingInstructors } = useInstructorsData();
+  const [showInstructorDropdown, setShowInstructorDropdown] = useState(false);
   const [newFeature, setNewFeature] = useState('');
   const [formData, setFormData] = useState<Partial<OnlineClass>>({
     title: '',
@@ -24,6 +27,7 @@ const AdminClassForm: React.FC<AdminClassFormProps> = ({ initialData, onSubmit, 
     classStarting: '',
     description: '',
     price: '',
+    priceUSD: '',
     duration: '',
     capacity: '',
     schedule: '',
@@ -52,6 +56,7 @@ const AdminClassForm: React.FC<AdminClassFormProps> = ({ initialData, onSubmit, 
         classStarting: '',
         description: '',
         price: '',
+        priceUSD: '',
         duration: '',
         capacity: '',
         schedule: '',
@@ -122,15 +127,72 @@ const AdminClassForm: React.FC<AdminClassFormProps> = ({ initialData, onSubmit, 
             </SelectContent>
           </Select>
         </div>
-        <div>
+        <div className="relative">
           <Label htmlFor="instructor">Instructor *</Label>
-          <Input
-            id="instructor"
-            value={formData.instructor}
-            onChange={(e) => setFormData({...formData, instructor: e.target.value})}
-            placeholder="e.g., Raai Kotha"
-            required
-          />
+          <div className="relative">
+            <Input
+              id="instructor"
+              value={formData.instructor || ''}
+              onChange={(e) => {
+                setFormData({...formData, instructor: e.target.value});
+                setShowInstructorDropdown(true);
+              }}
+              onFocus={() => setShowInstructorDropdown(true)}
+              placeholder="e.g., Raai Kotha"
+              required
+            />
+            <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          </div>
+
+          {showInstructorDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowInstructorDropdown(false)} />
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto p-1.5 space-y-1">
+                {isLoadingInstructors ? (
+                  <div className="px-3 py-2 text-xs text-gray-500">Loading instructors...</div>
+                ) : (
+                  <>
+                    {instructors
+                      .filter((inst: any) => inst.name.toLowerCase().includes((formData.instructor || '').toLowerCase()))
+                      .map((inst: any) => (
+                        <button
+                          key={inst.id}
+                          type="button"
+                          onClick={() => {
+                            setFormData({...formData, instructor: inst.name});
+                            setShowInstructorDropdown(false);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm text-yoga-forest hover:bg-yoga-cream/40 rounded-lg transition-colors flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="font-semibold text-yoga-forest">{inst.name}</div>
+                            <div className="text-[10px] text-yoga-forest/50">{inst.title || inst.specialization}</div>
+                          </div>
+                          {formData.instructor === inst.name && (
+                            <span className="text-yoga-sage text-xs font-bold">✓</span>
+                          )}
+                        </button>
+                      ))
+                    }
+                    {!instructors.some((inst: any) => inst.name.toLowerCase() === (formData.instructor || '').toLowerCase()) && formData.instructor && formData.instructor.trim() !== '' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowInstructorDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors italic border-t"
+                      >
+                        Use custom name: "{formData.instructor}"
+                      </button>
+                    )}
+                    {instructors.filter((inst: any) => inst.name.toLowerCase().includes((formData.instructor || '').toLowerCase())).length === 0 && (!formData.instructor || formData.instructor.trim() === '') && (
+                      <div className="px-3 py-2 text-xs text-gray-500 text-center">No instructors found. Type to enter a custom name.</div>
+                    )}
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -155,15 +217,24 @@ const AdminClassForm: React.FC<AdminClassFormProps> = ({ initialData, onSubmit, 
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
-          <Label htmlFor="price">Price *</Label>
+          <Label htmlFor="price">Price (INR) *</Label>
           <Input
             id="price"
             value={formData.price}
             onChange={(e) => setFormData({...formData, price: e.target.value})}
             placeholder="e.g., ₹1,200"
             required
+          />
+        </div>
+        <div>
+          <Label htmlFor="priceUSD">Price (USD)</Label>
+          <Input
+            id="priceUSD"
+            value={formData.priceUSD || ''}
+            onChange={(e) => setFormData({...formData, priceUSD: e.target.value})}
+            placeholder="e.g., $15"
           />
         </div>
         <div>

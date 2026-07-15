@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -33,6 +34,7 @@ export default function AdminProducts() {
     name: '',
     description: '',
     price: '',
+    priceUSD: '',
     image_url: '',
     category: '',
     whatsapp_message: '',
@@ -105,6 +107,7 @@ export default function AdminProducts() {
         name: formData.name,
         description: formData.description || null,
         price: parseFloat(formData.price),
+        priceUSD: formData.priceUSD ? parseFloat(formData.priceUSD) : null,
         image_url: formData.image_url || null,
         category: formData.category || null,
         whatsapp_message: formData.whatsapp_message || null,
@@ -150,6 +153,7 @@ export default function AdminProducts() {
       name: product.name,
       description: product.description || '',
       price: product.price.toString(),
+      priceUSD: product.priceUSD ? product.priceUSD.toString() : '',
       image_url: product.image_url || '',
       category: product.category || '',
       whatsapp_message: product.whatsapp_message || '',
@@ -189,6 +193,7 @@ export default function AdminProducts() {
       name: '',
       description: '',
       price: '',
+      priceUSD: '',
       image_url: '',
       category: '',
       whatsapp_message: '',
@@ -207,11 +212,7 @@ export default function AdminProducts() {
   };
 
   if (loading) {
-    return (
-      <div className="p-6">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-      </div>
-    );
+    return <AdminLoadingSpinner message="Loading products..." />;
   }
 
   return (

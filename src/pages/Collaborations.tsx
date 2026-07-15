@@ -7,6 +7,7 @@ import { Users, Heart, Star, Handshake, Mail, Phone } from 'lucide-react';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import ShareMenu from '@/components/ShareMenu';
 
 const Collaborations = () => {
   const settings = useSiteSettings();
@@ -55,19 +56,19 @@ const Collaborations = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 bg-gradient-to-br from-yoga-sage/20 to-yoga-forest/20">
+      <section className="pt-20 pb-4 md:pt-32 md:pb-16 bg-gradient-to-br from-yoga-sage/20 to-yoga-forest/20">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-yoga-forest mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-yoga-forest mb-3 sm:mb-6">
               Join Our <span className="text-yoga-terracotta">Collaboration</span> Network
             </h1>
-            <p className="text-lg md:text-xl text-yoga-forest/80 mb-8 leading-relaxed">
+            <p className="text-xs sm:text-lg md:text-xl text-yoga-forest/80 mb-0 sm:mb-8 leading-relaxed line-clamp-3 sm:line-clamp-none">
               Whether you're a yoga teacher, wellness brand, or business looking to promote authentic wellness, 
               we invite you to be part of our growing community dedicated to transforming lives through yoga.
             </p>
             <Button 
               onClick={() => handleWhatsAppContact("General collaboration connect query...")}
-              className="bg-yoga-sage hover:bg-yoga-forest text-white px-8 py-3 text-lg"
+              className="hidden sm:inline-flex bg-yoga-sage hover:bg-yoga-forest text-white px-6 py-2 sm:px-8 sm:py-3 text-sm sm:text-lg"
             >
               Start Collaborating
             </Button>
@@ -76,13 +77,13 @@ const Collaborations = () => {
       </section>
 
       {/* Collaboration Types */}
-      <section className="py-16">
+      <section className="pt-2 pb-8 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-yoga-forest mb-4">
-              Collaboration Opportunities
+          <div className="text-center mb-6 md:mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-yoga-forest mb-2 md:mb-4">
+              Collaboration <span className="text-yoga-terracotta">Opportunities</span>
             </h2>
-            <p className="text-lg text-yoga-forest/70 max-w-2xl mx-auto">
+            <p className="text-xs sm:text-lg text-yoga-forest/70 max-w-2xl mx-auto line-clamp-2 sm:line-clamp-none">
               Discover how you can join our mission to spread wellness and mindfulness through authentic yoga practices.
             </p>
           </div>
@@ -113,20 +114,26 @@ const Collaborations = () => {
                         </ul>
                       </div>
                       
-                      <div className="flex gap-3 pt-2">
+                      <div className="flex gap-2 pt-2">
                         <Button 
                           onClick={() => window.location.href = `mailto:${settings.contactEmail}?subject=${encodeURIComponent(`${type.title} Collaboration Inquiry`)}`}
                           variant="outline"
-                          className="flex-1 border-yoga-sage text-yoga-forest hover:bg-yoga-sage hover:text-white"
+                          className="flex-1 border-yoga-sage text-yoga-forest hover:bg-yoga-sage hover:text-white text-xs h-9 px-2"
                         >
                           Email Us
                         </Button>
                         <Button 
                           onClick={() => handleWhatsAppContact(`${type.title} connect request`)}
-                          className="flex-1 bg-yoga-sage hover:bg-yoga-forest text-white"
+                          className="flex-1 bg-yoga-sage hover:bg-yoga-forest text-white text-xs h-9 px-2"
                         >
                           WhatsApp
                         </Button>
+                        <ShareMenu 
+                          title={`${type.title} Collaboration`}
+                          description={type.description}
+                          iconOnly={true}
+                          className="bg-white border-white/60 text-yoga-forest hover:bg-white/90 hover:text-yoga-forest shadow-sm h-8 w-8 rounded-full"
+                        />
                       </div>
                     </div>
                 </CardContent>

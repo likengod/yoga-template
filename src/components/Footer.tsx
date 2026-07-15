@@ -1,13 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin, ExternalLink, MessageCircle, Globe, PlayCircle, Linkedin } from 'lucide-react';
+import { Heart, Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin, ExternalLink, MessageCircle, Globe, PlayCircle, Linkedin, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { defaultSiteSettings, SiteSettingsData } from '@/config/siteSettings';
+import { siteSettingsService } from '@/services/database';
 
 const Footer = () => {
   const [siteSettings, setSiteSettings] = useState<SiteSettingsData>(defaultSiteSettings);
 
   useEffect(() => {
-    const loadSettings = () => {
+    const loadSettings = async () => {
+      try {
+        const data = await siteSettingsService.getSettings();
+        if (data && data.socialLinks) {
+          try {
+            const parsed = JSON.parse(data.socialLinks);
+            setSiteSettings({
+              ...defaultSiteSettings,
+              ...parsed,
+              siteName: data.businessName || parsed.siteName || defaultSiteSettings.siteName,
+              contactEmail: data.businessEmail || parsed.contactEmail || defaultSiteSettings.contactEmail,
+              contactPhone: data.businessPhone || parsed.contactPhone || defaultSiteSettings.contactPhone,
+              headerLogo: data.logoUrl || parsed.headerLogo || defaultSiteSettings.headerLogo,
+              footerLogo: data.logoUrl || parsed.footerLogo || defaultSiteSettings.footerLogo
+            });
+            return;
+          } catch (e) {
+            console.error("Failed to parse socialLinks JSON in Footer", e);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load site settings in Footer from database:', err);
+      }
+
+      // Fallback
       const stored = localStorage.getItem('siteSettings');
       if (stored) {
         try {
@@ -24,7 +49,7 @@ const Footer = () => {
   }, []);
   const exploreLinks = [{
     name: 'About Us',
-    href: '/about-us'
+    href: '/about'
   }, {
     name: 'Our Classes',
     href: '/classes'
@@ -76,14 +101,20 @@ const Footer = () => {
   }, {
     name: 'Refund Policy',
     href: '/refund-policy'
+  }, {
+    name: 'Cookies Policy',
+    href: '/cookies-policy'
+  }, {
+    name: 'Yoga Certificate',
+    href: '/yoga-certificate'
   }];
   return <footer className="bg-gradient-to-br from-yoga-sage to-yoga-forest text-white">
       {/* Main Content - 4 Column Layout */}
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 max-w-7xl mx-auto">
           
           {/* Column 1: Brand & Socials */}
-          <div className="space-y-6">
+          <div className="col-span-2 lg:col-span-1 space-y-6">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12">
                 <img loading="lazy" src={siteSettings.footerLogo} alt={`${siteSettings.siteName} Logo`} className="w-full h-full object-contain filter brightness-0 invert" />
@@ -110,7 +141,7 @@ const Footer = () => {
           </div>
 
           {/* Column 2: Explore */}
-          <div>
+          <div className="col-span-1">
             <h4 className="text-lg font-bold mb-6 text-white border-b border-white/20 pb-2 inline-block">Explore</h4>
             <ul className="space-y-3">
               {exploreLinks.map(link => (
@@ -125,7 +156,7 @@ const Footer = () => {
           </div>
 
           {/* Column 3: Legal */}
-          <div>
+          <div className="col-span-1">
             <h4 className="text-lg font-bold mb-6 text-white border-b border-white/20 pb-2 inline-block">Legal Info</h4>
             <ul className="space-y-3">
               {legalLinks.map(link => (
@@ -139,7 +170,7 @@ const Footer = () => {
           </div>
 
           {/* Column 4: Get In Touch */}
-          <div>
+          <div className="col-span-2 lg:col-span-1">
             <h4 className="text-lg font-bold mb-6 text-white border-b border-white/20 pb-2 inline-block">Get In Touch</h4>
             <div className="space-y-5">
               {contactCards.map(contact => {
@@ -170,9 +201,9 @@ const Footer = () => {
       <div className="border-t border-white/20">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 text-white/80">
+            <div className="flex items-center justify-center text-[10px] sm:text-sm text-white/80 whitespace-nowrap gap-1">
               <span>© {new Date().getFullYear()} {siteSettings.siteName} • Dev Partner:</span>
-              <a href="https://GorillaTechSolution.com" target="_blank" rel="noopener noreferrer" className="text-yoga-cream hover:text-white transition-colors underline">
+              <a href="https://GorillaTechSolution.com" target="_blank" rel="noopener noreferrer" className="text-yoga-cream hover:text-white transition-colors underline font-medium">
                 Gorilla Tech Solution
               </a>
             </div>

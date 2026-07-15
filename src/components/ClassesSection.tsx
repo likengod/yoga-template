@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { optimizeUnsplashUrl } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +26,7 @@ interface OnlineClass {
   instructor: string;
   description: string;
   price: string;
+  priceUSD?: string;
   duration: string;
   capacity: string;
   schedule: string;
@@ -47,6 +49,20 @@ const ClassesSection = () => {
   const [selectedClassTitle, setSelectedClassTitle] = useState<string | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  const [isIndia, setIsIndia] = useState(true);
+
+  useEffect(() => {
+    try {
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setIsIndia(userTimeZone === 'Asia/Calcutta' || userTimeZone === 'Asia/Kolkata');
+    } catch (e) {
+      setIsIndia(true);
+    }
+  }, []);
+
+  const getDisplayPrice = (yogaClass: OnlineClass) => {
+    return isIndia ? yogaClass.price : (yogaClass.priceUSD || yogaClass.price);
+  };
 
   const toggleExpand = (id: string) => {
     setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
@@ -158,14 +174,14 @@ const ClassesSection = () => {
   };
 
   return (
-    <section className="py-16 bg-yoga-cream">
+    <section className="pt-8 pb-16 md:py-16 bg-yoga-cream">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl lg:text-6xl font-bold text-yoga-forest mb-6">
+        <div className="text-center mb-6 md:mb-12">
+          <h1 className="text-4xl lg:text-6xl font-bold text-yoga-forest mb-4 md:mb-6">
             Online <span className="text-yoga-terracotta">Yoga</span> Classes
           </h1>
-          <p className="text-lg text-yoga-forest/80 max-w-3xl mx-auto">
+          <p className="text-xs sm:text-base md:text-lg text-yoga-forest/80 max-w-3xl mx-auto line-clamp-2 sm:line-clamp-none">
             Join our live online yoga sessions from the comfort of your home. Expert instruction, 
             personal attention, and a supportive community await you.
           </p>
@@ -177,27 +193,27 @@ const ClassesSection = () => {
         </div>
 
         {/* Features Banner */}
-        <div className="bg-white rounded-xl p-6 mb-12 shadow-md">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+        <div className="bg-white rounded-xl p-3 md:p-6 mb-12 shadow-md">
+          <div className="grid grid-cols-4 gap-1 sm:gap-4 md:gap-6 text-center">
             <div className="flex flex-col items-center">
-              <Video className="w-8 h-8 text-yoga-sage mb-2" />
-              <h3 className="font-semibold text-yoga-forest">Live HD Classes</h3>
-              <p className="text-sm text-yoga-forest/70">Crystal clear video quality</p>
+              <Video className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-yoga-sage mb-1 md:mb-2" />
+              <h3 className="font-semibold text-yoga-forest text-[10px] sm:text-xs md:text-base leading-tight">Live HD Classes</h3>
+              <p className="text-[8px] sm:text-xs md:text-sm text-yoga-forest/70 leading-tight">Crystal clear video quality</p>
             </div>
             <div className="flex flex-col items-center">
-              <Users className="w-8 h-8 text-yoga-sage mb-2" />
-              <h3 className="font-semibold text-yoga-forest">Small Groups</h3>
-              <p className="text-sm text-yoga-forest/70">Personal attention guaranteed</p>
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-yoga-sage mb-1 md:mb-2" />
+              <h3 className="font-semibold text-yoga-forest text-[10px] sm:text-xs md:text-base leading-tight">Small Groups</h3>
+              <p className="text-[8px] sm:text-xs md:text-sm text-yoga-forest/70 leading-tight">Personal attention guaranteed</p>
             </div>
             <div className="flex flex-col items-center">
-              <Wifi className="w-8 h-8 text-yoga-sage mb-2" />
-              <h3 className="font-semibold text-yoga-forest">Easy Access</h3>
-              <p className="text-sm text-yoga-forest/70">Join from any device</p>
+              <Wifi className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-yoga-sage mb-1 md:mb-2" />
+              <h3 className="font-semibold text-yoga-forest text-[10px] sm:text-xs md:text-base leading-tight">Easy Access</h3>
+              <p className="text-[8px] sm:text-xs md:text-sm text-yoga-forest/70 leading-tight">Join from any device</p>
             </div>
             <div className="flex flex-col items-center">
-              <Star className="w-8 h-8 text-yoga-sage mb-2" />
-              <h3 className="font-semibold text-yoga-forest">Expert Teachers</h3>
-              <p className="text-sm text-yoga-forest/70">Certified professionals</p>
+              <Star className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-yoga-sage mb-1 md:mb-2" />
+              <h3 className="font-semibold text-yoga-forest text-[10px] sm:text-xs md:text-base leading-tight">Expert Teachers</h3>
+              <p className="text-[8px] sm:text-xs md:text-sm text-yoga-forest/70 leading-tight">Certified professionals</p>
             </div>
           </div>
         </div>
@@ -221,22 +237,24 @@ const ClassesSection = () => {
                 {/* Rectangular Image with Price Badge & Share */}
                 <div className="relative w-full h-48 overflow-hidden rounded-t-md group">
                   <img loading="lazy" 
-                    src={yogaClass.image} 
+                    src={optimizeUnsplashUrl(yogaClass.image, 400, 60)} 
                     alt={yogaClass.title}
+                    width={400}
+                    height={192}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-3 right-3 bg-[#9eab91] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                    {yogaClass.price.match(/[₹$]\s*[\d,]+/) ? yogaClass.price.match(/[₹$]\s*[\d,]+/)?.[0] : yogaClass.price}
+                    {getDisplayPrice(yogaClass).match(/[₹$]\s*[\d,]+/) ? getDisplayPrice(yogaClass).match(/[₹$]\s*[\d,]+/)?.[0] : getDisplayPrice(yogaClass)}
                   </div>
                   
                   {/* Share Button */}
                   <div className="absolute bottom-3 right-3">
                     <ShareMenu
                       title={yogaClass.title}
-                      description={`${yogaClass.instructor} • ${yogaClass.price} • ${yogaClass.schedule}`}
+                      description={`${yogaClass.instructor} • ${getDisplayPrice(yogaClass)} • ${yogaClass.schedule}`}
                       url={`${window.location.origin}/classes`}
                       iconOnly
-                      className="bg-white/90 backdrop-blur-sm border-white/50 hover:bg-white"
+                      className="bg-white border-white/60 text-yoga-forest hover:bg-white/90 hover:text-yoga-forest shadow-sm h-7 w-7 rounded-full"
                     />
                   </div>
                 </div>
@@ -284,7 +302,7 @@ const ClassesSection = () => {
                       Starting At
                     </span>
                     <span className="text-lg font-bold text-slate-800">
-                      {yogaClass.price.match(/[₹$]\s*[\d,]+/) ? yogaClass.price.match(/[₹$]\s*[\d,]+/)?.[0] : yogaClass.price}
+                      {getDisplayPrice(yogaClass).match(/[₹$]\s*[\d,]+/) ? getDisplayPrice(yogaClass).match(/[₹$]\s*[\d,]+/)?.[0] : getDisplayPrice(yogaClass)}
                     </span>
                   </div>
 

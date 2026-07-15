@@ -1,28 +1,28 @@
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
 model AboutContent {
-  id              String   @id @default(uuid())
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  founder_bio     String?
-  founder_image   String?
-  founder_name    String?
-  founder_title   String?
-  hero_image      String?
-  hero_subtitle   String?
-  hero_title      String?
-  mission         String?
-  section_image   String?
-  story           String?
-  values          String?
-  vision          String?
+  id            String   @id @default(uuid())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  founder_bio   String?  @db.Text
+  founder_image String?
+  founder_name  String?
+  founder_title String?
+  hero_image    String?
+  hero_subtitle String?
+  hero_title    String?
+  mission       String?  @db.Text
+  section_image String?
+  story         String?  @db.Text
+  values        String?  @db.Text
+  vision        String?  @db.Text
 
   @@map("about_content")
 }
@@ -32,15 +32,17 @@ model Article {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   title      String
-  content    String
+  content    String   @db.Text
   author     String
   category   String?
-  excerpt    String?
+  excerpt    String?  @db.Text
   image_url  String?
   published  Boolean? @default(false)
   featured   Boolean? @default(false)
   views      Int?     @default(0)
 
+  @@index([published])
+  @@index([featured])
   @@map("articles")
 }
 
@@ -56,7 +58,10 @@ model Booking {
   preferred_time   String?
   special_requests String?
   status           String?  @default("pending")
+  instructor       String?
 
+  @@index([email])
+  @@index([status])
   @@map("bookings")
 }
 
@@ -66,7 +71,7 @@ model ContactContent {
   updated_at    DateTime @updatedAt
   hero_title    String?
   hero_subtitle String?
-  address       String?
+  address       String?  @db.Text
   email         String?
   hours         String?
   phone         String?
@@ -75,12 +80,12 @@ model ContactContent {
 }
 
 model GalleryImage {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   date        String
   title       String
   url         String
   description String?
-  views       Int?     @default(0)
+  views       Int?    @default(0)
 
   @@map("gallery_images")
 }
@@ -106,11 +111,15 @@ model Product {
   name             String
   description      String?
   price            Float
+  priceUSD         Float?
   image_url        String?
   category         String?
   whatsapp_message String?
   stock_quantity   Int?     @default(0)
   is_available     Boolean? @default(true)
+  is_featured      Boolean? @default(false)
+  buy_action       String?  @default("whatsapp")
+  external_link    String?  @db.Text
 
   @@map("products")
 }
@@ -147,6 +156,7 @@ model File {
 
   @@map("files")
 }
+
 model Instructor {
   id             String   @id @default(uuid())
   created_at     DateTime @default(now())
@@ -155,10 +165,10 @@ model Instructor {
   title          String?
   specialization String?
   experience     String?
-  certifications String?  // Storing as JSON string
-  rating         Float?   @default(0.0)
+  certifications String?
+  rating         Float?   @default(0)
   students       String?
-  description    String?
+  description    String?  @db.Text
   image          String?
   email          String?
   phone          String?
@@ -167,7 +177,12 @@ model Instructor {
   twitter        String?
   linkedin       String?
   featured       Boolean? @default(false)
+  signature_url  String?
+  tiktok         String?
+  connected_user String?
 
+  @@index([featured])
+  @@index([connected_user])
   @@map("instructors")
 }
 
@@ -178,19 +193,105 @@ model OnlineClass {
   title          String
   instructor     String?
   classStarting  String?
-  description    String?
+  description    String?  @db.Text
   price          String?
+  priceUSD       String?
   duration       String?
   capacity       String?
   schedule       String?
   level          String?
-  rating         Float?   @default(0.0)
-  features       String?  // Storing as JSON string
+  rating         Float?   @default(0)
+  features       String?
   image          String?
   joinLink       String?
   maxSeats       Int?     @default(0)
   availableSeats Int?     @default(0)
   featured       Boolean? @default(false)
 
+  @@index([featured])
   @@map("online_classes")
+}
+
+model PolicyPage {
+  id         String   @id @default(uuid())
+  type       String   @unique
+  title      String
+  content    String   @db.Text
+  updated_at DateTime @updatedAt
+
+  @@map("policy_pages")
+}
+
+model YogaCertificate {
+  id             String   @id @default(uuid())
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  certificateId  String   @unique
+  studentName    String
+  courseName     String
+  issueDate      DateTime
+  instructorName String
+  phone          String?
+  signature_url  String?
+
+  @@map("yoga_certificates")
+}
+
+model User {
+  id         String   @id
+  username   String   @unique
+  email      String   @unique
+  password   String
+  role       String   @default("user")
+  phone      String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("users")
+}
+
+model SeoSetting {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  keywords    String?
+  robotsTxt   String?  @db.Text
+  sitemapXml  String?  @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("seo_settings")
+}
+
+model SiteSetting {
+  id            String   @id @default(uuid())
+  logoUrl       String?
+  faviconUrl    String?
+  socialLinks   String?  @db.Text
+  businessName  String?
+  businessEmail String?
+  businessPhone String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  date        String
+  time        String
+  location    String
+  price       String
+  image       String
+  capacity    String
+  joinUrl     String
+  buttonText  String?
+  buttonUrl   String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("events")
 }

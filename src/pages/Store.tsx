@@ -20,13 +20,14 @@ import {
 } from "@/components/ui/pagination";
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { useRef, useCallback } from 'react';
+import { siteSettingsService } from '@/services/database';
 
 interface Product {
   id: string;
   name: string;
   description?: string;
   price: number;
+  priceUSD?: number;
   image_url?: string;
   category?: string;
   whatsapp_message?: string;
@@ -38,36 +39,32 @@ interface Product {
   external_link?: string;
 }
 
+const loadRazorpayScript = () => {
+  return new Promise<boolean>((resolve) => {
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export default function Store() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [siteSettings, setSiteSettings] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedProducts, setExpandedProducts] = useState<{[key: string]: boolean}>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [priceSort, setPriceSort] = useState<'default' | 'asc' | 'desc'>('default');
-  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const itemsPerPage = 12;
+  const [isIndia, setIsIndia] = useState(true);
   const { toast } = useToast();
-  
-  // Infinite scroll observer setup
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastProductElementRef = useCallback((node: HTMLDivElement) => {
-    if (loading) return;
-    if (observer.current) observer.current.disconnect();
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        // Find total pages based on current filtered products
-        const maxPages = Math.ceil(filteredProducts.length / itemsPerPage);
-        if (currentPage < maxPages) {
-          setCurrentPage(prev => prev + 1);
-        }
-      }
-    });
-    
-    if (node) observer.current.observe(node);
-  }, [loading, currentPage]);
 
   usePageMeta({
     title: 'Yoga Store',
@@ -81,15 +78,33 @@ export default function Store() {
   useEffect(() => {
     loadProducts();
     
-    // Dynamic pagination based on screen width
-    const handleResize = () => {
-      setItemsPerPage(window.innerWidth < 768 ? 8 : 12);
+    try {
+      const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setIsIndia(userTimeZone === 'Asia/Calcutta' || userTimeZone === 'Asia/Kolkata');
+    } catch (e) {
+      setIsIndia(true);
+    }
+
+    const loadSettings = async () => {
+      try {
+        const data = await siteSettingsService.getSettings();
+        if (data && data.socialLinks) {
+          try {
+            setSiteSettings(JSON.parse(data.socialLinks));
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load settings in Store page:', err);
+      }
     };
-    
-    handleResize(); // initial check
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    loadSettings();
   }, []);
+
+  const getDisplayPrice = (product: Product) => {
+    return isIndia ? product.price : (product.priceUSD || product.price);
+  };
 
   const loadProducts = async () => {
     try {
@@ -137,16 +152,70 @@ export default function Store() {
   });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const currentProducts = filteredProducts.slice(0, currentPage * itemsPerPage);
+  const currentProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, selectedCategory, priceSort]);
 
-  // renderPaginationItems removed in favor of infinite scroll
+  const renderPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-  const handleBuyNow = (product: Product) => {
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      items.push(
+        <PaginationItem key="1">
+          <PaginationLink onClick={() => setCurrentPage(1)}>1</PaginationLink>
+        </PaginationItem>
+      );
+      if (startPage > 2) {
+        items.push(
+          <PaginationItem key="ellipsis-start">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      items.push(
+        <PaginationItem key={i}>
+          <PaginationLink 
+            onClick={() => setCurrentPage(i)}
+            isActive={currentPage === i}
+          >
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(
+          <PaginationItem key="ellipsis-end">
+            <PaginationEllipsis />
+          </PaginationItem>
+        );
+      }
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink onClick={() => setCurrentPage(totalPages)}>{totalPages}</PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
+  };
+
+  const handleBuyNow = async (product: Product) => {
     // Legacy affiliate link fallback
     if (product.affiliate_link && !product.buy_action) {
       window.open(product.affiliate_link, '_blank');
@@ -161,20 +230,78 @@ export default function Store() {
     }
     
     if (action === 'razorpay') {
-      // Placeholder for Razorpay integration
       toast({
         title: "Initiating Payment",
         description: `Preparing Razorpay checkout for ${product.name}...`,
       });
-      // A full integration would load the Razorpay checkout script here.
-      setTimeout(() => {
-        alert(`Razorpay checkout modal would open here for ₹${product.price}`);
-      }, 500);
+      
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        toast({
+          title: "Payment Error",
+          description: "Failed to load Razorpay SDK. Please check your internet connection.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Fetch Razorpay credentials from state, falling back to localStorage
+      const storedSettings = localStorage.getItem('siteSettings');
+      const localSettings = storedSettings ? JSON.parse(storedSettings) : {};
+      const settings = siteSettings || localSettings || {};
+      const keyId = settings.razorpayKeyId;
+      
+      if (!keyId) {
+        toast({
+          title: "Setup Required",
+          description: "Razorpay Key ID is not configured. Please go to Admin Settings -> Integrations & API -> Payment Gateways and enter your Key ID.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const price = getDisplayPrice(product);
+      const currency = isIndia ? 'INR' : 'USD';
+      
+      const options = {
+        key: keyId,
+        amount: Math.round(price * 100), // amount in paise/cents
+        currency: currency,
+        name: settings.siteName || "Shakti Yoga Raai",
+        description: `Purchase of ${product.name}`,
+        image: settings.headerLogo || "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=150&q=80",
+        handler: function (response: any) {
+          toast({
+            title: "Payment Successful",
+            description: `Payment ID: ${response.razorpay_payment_id}`,
+          });
+        },
+        prefill: {
+          name: "",
+          email: "",
+          contact: ""
+        },
+        theme: {
+          color: "#2C5234" // theme color (yoga-forest)
+        }
+      };
+
+      try {
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error('Razorpay initialization failed:', err);
+        toast({
+          title: "Payment Error",
+          description: "Could not open Razorpay checkout. Please make sure the credentials are correct.",
+          variant: "destructive"
+        });
+      }
       return;
     }
     
     // Default to WhatsApp
-    const message = product.whatsapp_message || `Hi! I'm interested in purchasing ${product.name} for ₹${product.price}`;
+    const message = product.whatsapp_message || `Hi! I'm interested in purchasing ${product.name} for ${isIndia ? '₹' : '$'}${getDisplayPrice(product)}`;
     const whatsappUrl = `https://wa.me/917777816410?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -199,15 +326,15 @@ export default function Store() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex-grow bg-gradient-to-br from-background to-muted pt-20">
+      <div className="flex-grow bg-gradient-to-br from-background to-muted pt-10 md:pt-20">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 pt-20 pb-10">
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 pt-10 md:pt-20 pb-6 md:pb-10">
           <div className="max-w-7xl mx-auto px-6 text-center">
             <div className="flex items-center justify-center mb-2">
               <ShoppingCart className="h-12 w-12 text-primary mr-4" />
               <h1 className="text-4xl lg:text-6xl font-bold text-yoga-forest"><span className="text-yoga-terracotta">Yoga</span> Store</h1>
             </div>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Discover premium yoga products to enhance your practice and spiritual journey
             </p>
           </div>
@@ -264,13 +391,13 @@ export default function Store() {
               {currentProducts.map((product, index) => {
                 const isLast = index === currentProducts.length - 1;
                 return (
-                <div key={product.id} ref={isLast ? lastProductElementRef : null}>
+                <div key={product.id}>
                   <Card className="group h-full hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col">
                   <CardHeader className="p-4 bg-muted/30 relative">
                     <div className="absolute top-6 right-6 z-10 flex flex-col gap-2 items-end">
                       {product.is_featured && (
                         <Badge className="bg-yoga-terracotta text-white shadow-sm border-none">
-                          Featured
+                          PREMIUM
                         </Badge>
                       )}
                       {product.category && (
@@ -323,7 +450,9 @@ export default function Store() {
                       </div>
                     )}
                     <div className="flex items-center justify-between mt-auto pt-4">
-                      <span className="text-xl font-bold text-yoga-forest">₹{product.price}</span>
+                      <span className="text-xl font-bold text-yoga-forest">
+                        {isIndia ? '₹' : '$'}{getDisplayPrice(product)}
+                      </span>
                       {product.stock_quantity > 0 ? (
                         <Badge variant="outline" className="text-green-600 border-green-600">
                           {product.stock_quantity} in stock
@@ -350,6 +479,7 @@ export default function Store() {
                       description={product.description}
                       url={window.location.href}
                       iconOnly
+                      className="bg-white border-white/60 text-yoga-forest hover:bg-white/90 hover:text-yoga-forest shadow-sm h-8 w-8 rounded-full"
                     />
                   </CardFooter>
                   </Card>
@@ -367,10 +497,28 @@ export default function Store() {
             </div>
           )}
 
-          {/* Loading Indicator for Infinite Scroll */}
-          {currentPage < totalPages && (
-            <div className="py-8 flex justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yoga-sage"></div>
+          {/* Pagination Component */}
+          {totalPages > 1 && (
+            <div className="py-8">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {renderPaginationItems()}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
         </div>

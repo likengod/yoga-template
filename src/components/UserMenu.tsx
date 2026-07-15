@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { LogIn, User, Settings, Crown, Shield, Users, ChevronDown, Home } from 'lucide-react';
+import { LogIn, User, Settings, Crown, Shield, Users, ChevronDown, Home, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -82,6 +82,12 @@ const UserMenu = ({ user, onLogout, isAdminPage = false }: UserMenuProps) => {
           <DropdownMenuItem onClick={handleAdminPanel} className="cursor-pointer text-yoga-forest focus:bg-yoga-sage/10 focus:text-yoga-forest">
             <Settings className="mr-2 h-4 w-4" />
             <span>Admin Panel</span>
+          </DropdownMenuItem>
+        )}
+        {!isAdminPage && (
+          <DropdownMenuItem onClick={() => navigate('/my-courses')} className="cursor-pointer text-yoga-forest focus:bg-yoga-sage/10 focus:text-yoga-forest">
+            <BookOpen className="mr-2 h-4 w-4" />
+            <span>Your Courses</span>
           </DropdownMenuItem>
         )}
         {isAdminPage && (

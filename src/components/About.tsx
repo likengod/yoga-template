@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { optimizeUnsplashUrl } from '@/lib/utils';
 import { Heart, Leaf, Sun, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -107,8 +108,10 @@ const About = () => {
               {/* Main Image */}
               <div className="w-full h-[500px] rounded-3xl overflow-hidden shadow-2xl">
                 <img loading="lazy" 
-                  src={content.image} 
+                  src={optimizeUnsplashUrl(content.image, 600, 60)} 
                   alt="Yoga practice and meditation" 
+                  width={600}
+                  height={500}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.currentTarget.src = 'https://i.postimg.cc/ZnnS7KY3/Whats-App-Image-2025-06-06-at-11-19-59-PM.jpg';

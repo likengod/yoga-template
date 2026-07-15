@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { optimizeUnsplashUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Users, ExternalLink, Share, Sparkles, Star, Zap } from 'lucide-react';
+import { eventService } from '@/services/database';
 import {
   Dialog,
   DialogContent,
@@ -25,16 +27,17 @@ interface Event {
 }
 const EventsSection = () => {
   const [event, setEvent] = useState<Event | null>(null);
-  const loadEventData = () => {
-    const stored = localStorage.getItem('eventData');
-    if (stored) {
-      setEvent(JSON.parse(stored));
-    } else {
-      // Default event with new course details
-      const defaultEvent: Event = {
-        id: '1',
-        title: '5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course',
-        description: `Course Overview:
+  const loadEventData = async () => {
+    try {
+      const data = await eventService.getEvent();
+      if (data) {
+        setEvent(data);
+      } else {
+        // Fallback to default event
+        const defaultEvent: Event = {
+          id: '1',
+          title: '5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course',
+          description: `Course Overview:
 
 Dive into a powerful spiritual journey with this intensive 5-day course focused on the 7 Chakras and Kundalini awakening. This course blends guided meditation, chakra balancing, pranayama, Kundalini kriyas, Pelvic floor flexibility Yoga and sound healing to activate and align your inner energy system.
 
@@ -92,38 +95,38 @@ Focus: Full-body energy awakening & integration
 
 👉 Limited seats available for personal attention
 👉 Click below to reserve your spot`,
-        date: '2025-07-21',
-        time: 'Morning: 5:00 AM – 6:00 AM\nEvening: 5:00 PM – 6:00 PM\n(Join as per your convenience)',
-        location: 'Online via Zoom',
-        price: '₹7500 INR / $120 USD',
-        image: 'https://i.postimg.cc/VvCNSCSz/5-Day-Meditation.webp',
-        capacity: '21 participants',
-        joinUrl: 'https://wa.me/918777816410?text=Hi! I would like to join the 5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course. Please send me the details.',
-        buttonText: 'Event Details',
-        buttonUrl: '/admin'
-      };
-      setEvent(defaultEvent);
-      localStorage.setItem('eventData', JSON.stringify(defaultEvent));
+          date: '2025-07-21',
+          time: 'Morning: 5:00 AM – 6:00 AM\nEvening: 5:00 PM – 6:00 PM\n(Join as per your convenience)',
+          location: 'Online via Zoom',
+          price: '₹7500 INR / $120 USD',
+          image: 'https://i.postimg.cc/VvCNSCSz/5-Day-Meditation.webp',
+          capacity: '21 participants',
+          joinUrl: 'https://wa.me/918777816410?text=Hi! I would like to join the 5-Day Meditation, Pelvic floor Flexibility & 7 Chakra Kundalini Activation Course. Please send me the details.',
+          buttonText: 'Event Details',
+          buttonUrl: '/admin'
+        };
+        setEvent(defaultEvent);
+      }
+    } catch (err) {
+      console.error('Failed to load event data from database:', err);
     }
   };
-  useEffect(() => {
-    // Clear old event data and set new default
-    localStorage.removeItem('eventData');
 
-    // Load event data with new defaults
+  useEffect(() => {
+    // Load event data from DB
     loadEventData();
 
-    // Listen for storage changes (when admin updates the event)
+    // Listen for storage changes or custom events to reload data
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'eventData') {
         loadEventData();
       }
     };
 
-    // Listen for custom storage events dispatched by admin
     const handleCustomStorageEvent = () => {
       loadEventData();
     };
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('storage', handleCustomStorageEvent);
     return () => {
@@ -176,20 +179,20 @@ Focus: Full-body energy awakening & integration
   }
   return <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-primary/5 to-secondary/5 py-12 md:py-20">
+      <div className="bg-gradient-to-br from-primary/5 to-secondary/5 pt-8 pb-4 md:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center bg-card border px-4 py-2 rounded-full mb-6 shadow-sm">
-              <Star className="text-primary mr-2" size={16} />
-              <span className="text-primary font-medium text-sm">Featured Event</span>
+            <div className="inline-flex items-center bg-card border px-4 py-2 rounded-full mb-3 md:mb-6 shadow-sm">
+              <Star className="text-yoga-terracotta mr-2" size={16} />
+              <span className="text-yoga-forest font-medium text-sm">Featured Event</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+            <h1 className="text-3xl md:text-5xl font-bold text-yoga-forest mb-2 md:mb-4 leading-tight">
               Join Our Transformative
-              <span className="block text-primary">
+              <span className="block text-yoga-terracotta">
                 Wellness Journey
               </span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xs sm:text-lg text-muted-foreground max-w-2xl mx-auto line-clamp-2 sm:line-clamp-none">
               Experience profound healing and spiritual awakening through our comprehensive meditation and wellness program.
             </p>
           </div>
@@ -203,9 +206,9 @@ Focus: Full-body energy awakening & integration
             <div className="grid lg:grid-cols-5 gap-0">
               {/* Event Image */}
               <div className="lg:col-span-2 relative group">
-                <div className="aspect-square lg:aspect-auto lg:h-full min-h-[300px] relative overflow-hidden">
-                  <img loading="lazy" src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                <div className="w-full h-auto lg:aspect-auto lg:h-full lg:min-h-[300px] relative overflow-hidden bg-yoga-cream/30 flex items-center justify-center">
+                  <img loading="lazy" src={optimizeUnsplashUrl(event.image, 600, 60)} alt={event.title} width={600} height={400} className="w-full h-auto lg:h-full lg:w-full lg:object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none"></div>
                   
                   {/* Price Badge */}
                   <div className="absolute bottom-4 left-4">
@@ -252,50 +255,50 @@ Focus: Full-body energy awakening & integration
                   </div>
 
                   {/* Event Info Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Calendar size={18} className="text-primary" />
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="flex items-center gap-1.5 sm:gap-3 p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="w-7 h-7 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Calendar className="text-primary w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm">Date</p>
-                        <p className="text-muted-foreground text-xs md:text-sm truncate">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">Date</p>
+                        <p className="text-muted-foreground text-[10px] sm:text-xs md:text-sm truncate leading-tight">
                           {new Date(event.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="flex items-start space-x-3 p-3 bg-muted/50 rounded-lg">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Clock size={18} className="text-primary" />
+                    <div className="flex items-start gap-1.5 sm:gap-3 p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="w-7 h-7 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Clock className="text-primary w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm">Time</p>
-                        <p className="text-muted-foreground text-xs md:text-sm whitespace-pre-line">{event.time}</p>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">Time</p>
+                        <p className="text-muted-foreground text-[10px] sm:text-xs md:text-sm whitespace-pre-line leading-tight">{event.time}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <MapPin size={18} className="text-primary" />
+                    <div className="flex items-center gap-1.5 sm:gap-3 p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="w-7 h-7 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <MapPin className="text-primary w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm">Location</p>
-                        <p className="text-muted-foreground text-xs md:text-sm">{event.location}</p>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">Location</p>
+                        <p className="text-muted-foreground text-[10px] sm:text-xs md:text-sm truncate leading-tight">{event.location}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Users size={18} className="text-primary" />
+                    <div className="flex items-center gap-1.5 sm:gap-3 p-2 sm:p-3 bg-muted/50 rounded-lg">
+                      <div className="w-7 h-7 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Users className="text-primary w-3.5 h-3.5 sm:w-[18px] sm:h-[18px]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm">Capacity</p>
-                        <p className="text-muted-foreground text-xs md:text-sm">{event.capacity}</p>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">Capacity</p>
+                        <p className="text-muted-foreground text-[10px] sm:text-xs md:text-sm truncate leading-tight">{event.capacity}</p>
                       </div>
                     </div>
                   </div>
