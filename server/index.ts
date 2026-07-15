@@ -447,6 +447,8 @@ app.post('/api/articles/seed', authenticateToken, async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to seed articles' });
   }
+});
+
 // Seed route for Products
 app.post('/api/products/seed', authenticateToken, async (req, res) => {
   try {
