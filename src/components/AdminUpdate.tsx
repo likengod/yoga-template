@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DownloadCloud, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { defaultSiteSettings } from '@/config/siteSettings';
+import { siteSettingsService } from '@/services/database';
 
 const AdminUpdate = () => {
   const { toast } = useToast();
@@ -15,7 +16,7 @@ const AdminUpdate = () => {
   const [availableVersion, setAvailableVersion] = useState<string | null>(null);
   const [currentVersion, setCurrentVersion] = useState<string>('0.0.1');
 
-  // Load GitHub config from Site Settings in localStorage
+  // Load GitHub config from Site Settings
   const [githubConfig, setGithubConfig] = useState({
     token: '',
     owner: '',
@@ -23,19 +24,48 @@ const AdminUpdate = () => {
   });
 
   useEffect(() => {
-    const stored = localStorage.getItem('siteSettings');
-    if (stored) {
+    const loadConfig = async () => {
       try {
-        const settings = { ...defaultSiteSettings, ...JSON.parse(stored) };
-        setGithubConfig({
-          token: settings.githubToken || '',
-          owner: settings.githubRepoOwner || '',
-          repo: settings.githubRepoName || ''
-        });
+        const data = await siteSettingsService.getSettings();
+        if (data && data.socialLinks) {
+          const parsed = JSON.parse(data.socialLinks);
+          setGithubConfig({
+            token: parsed.githubToken || '',
+            owner: parsed.githubRepoOwner || '',
+            repo: parsed.githubRepoName || ''
+          });
+        } else {
+          // Fallback to localStorage
+          const stored = localStorage.getItem('siteSettings');
+          if (stored) {
+            const settings = { ...defaultSiteSettings, ...JSON.parse(stored) };
+            setGithubConfig({
+              token: settings.githubToken || '',
+              owner: settings.githubRepoOwner || '',
+              repo: settings.githubRepoName || ''
+            });
+          }
+        }
       } catch (e) {
-        console.error("Failed to parse site settings", e);
+        console.error("Failed to load site settings from database", e);
+        // Fallback to localStorage
+        const stored = localStorage.getItem('siteSettings');
+        if (stored) {
+          try {
+            const settings = { ...defaultSiteSettings, ...JSON.parse(stored) };
+            setGithubConfig({
+              token: settings.githubToken || '',
+              owner: settings.githubRepoOwner || '',
+              repo: settings.githubRepoName || ''
+            });
+          } catch (err) {
+            console.error("Failed to parse site settings", err);
+          }
+        }
       }
-    }
+    };
+
+    loadConfig();
     
     const savedVersion = localStorage.getItem('currentVersionSha');
     if (savedVersion) {
