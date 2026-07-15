@@ -51,7 +51,7 @@ jobs:
               source /home/shaktiyogaraai/.nvm/nvm.sh &&
               cd /home/shaktiyogaraai/htdocs/shaktiyogaraai.com &&
               git pull origin main &&
-              npm install --omit=dev --legacy-peer-deps &&
+              npm install --legacy-peer-deps &&
               npm run build &&
               cd server &&
               npm install --omit=dev --legacy-peer-deps &&
