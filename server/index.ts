@@ -395,7 +395,12 @@ const handleCrud = (
   router.post('/', checkAuth(authPost), validateRequest(schema), async (req: any, res: any) => {
     try {
       const { id, created_at, updated_at, ...data } = req.body;
-      const item = await model.create({ data });
+      const crypto = require('crypto');
+      const payload = {
+        id: id || crypto.randomUUID(),
+        ...data
+      };
+      const item = await model.create({ data: payload });
       res.json(item);
     } catch (error) {
       console.error('handleCrud POST error:', error);
