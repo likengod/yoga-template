@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, ShoppingCart } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import AdminPagination from '../AdminPagination';
 
 export interface Product {
