@@ -47,24 +47,16 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || '22' }}
           script: |
-            # Navigate to the app directory
-            cd /home/shaktiyogaraai/htdocs/shaktiyogaraai.com
-            
-            # Pull the latest changes from the repository as shaktiyogaraai user
-            sudo -u shaktiyogaraai git pull origin main
-            
-            # Install dependencies and build as shaktiyogaraai user
-            sudo -u shaktiyogaraai npm install --omit=dev --legacy-peer-deps
-            sudo -u shaktiyogaraai npm run build
-            
-            cd server
-            sudo -u shaktiyogaraai npm install --omit=dev --legacy-peer-deps
-            
-            # Push database schema updates as shaktiyogaraai user
-            sudo -u shaktiyogaraai npx prisma generate
-            sudo -u shaktiyogaraai npx prisma db push --accept-data-loss
-            
-            # Restart the server using pm2 as shaktiyogaraai user
-            cd ..
-            sudo -u shaktiyogaraai pm2 restart shakti-yoga-server || sudo -u shaktiyogaraai pm2 start ecosystem.config.js
-            sudo -u shaktiyogaraai pm2 save
+            sudo -i -u shaktiyogaraai bash -c "
+              cd /home/shaktiyogaraai/htdocs/shaktiyogaraai.com &&
+              git pull origin main &&
+              npm install --omit=dev --legacy-peer-deps &&
+              npm run build &&
+              cd server &&
+              npm install --omit=dev --legacy-peer-deps &&
+              npx prisma generate &&
+              npx prisma db push --accept-data-loss &&
+              cd .. &&
+              (pm2 restart shakti-yoga-server || pm2 start ecosystem.config.js) &&
+              pm2 save
+            "
