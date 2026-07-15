@@ -25,13 +25,13 @@ jobs:
           node-version: '20'
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
         
       - name: Build Frontend
         run: npm run build
         
       - name: Install Server Dependencies
-        run: cd server && npm ci
+        run: cd server && npm install --legacy-peer-deps
         
       # Deployment step to a standard VPS via SSH using appleboy/ssh-action
       # IMPORTANT: To make this work, add these secrets to your GitHub Repository (Settings -> Secrets and variables -> Actions):
