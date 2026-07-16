@@ -132,9 +132,9 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
   }, [isCreateDialogOpen, autoGenerateId]);
 
   const canManageUser = (targetUser: User) => {
-    // Super admin can manage everyone except other super admins
+    // Super admin can manage everyone (including themselves and other super admins)
     if (currentUser.role === 'superadmin') {
-      return targetUser.role !== 'superadmin' || targetUser.id === currentUser.id;
+      return true;
     }
     // Admin can manage users and guests, but not admins or super admins
     if (currentUser.role === 'admin') {
