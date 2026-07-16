@@ -42,11 +42,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.gpteng.co"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https:", "http:", "*"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https:", "http:", "*"],
+      connectSrc: ["'self'", "https:", "http:", "*", "https://cdn.gpteng.co"],
       frameSrc: ["'self'", "https://www.google.com", "https://google.com", "https://www.youtube.com", "https://youtube.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
