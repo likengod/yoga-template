@@ -1269,6 +1269,42 @@ app.use((req, res) => {
 });
 
 // Start Server
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, '0.0.0.0', async () => {
   console.log(`Server running on port ${port}`);
+
+  // Ensure default superadmin/admin password in database matches the environment variable (self-healing recovery)
+  if (ADMIN_PASSWORD) {
+    try {
+      const dbAdmin = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { username: 'admin' },
+            { email: ADMIN_EMAIL }
+          ]
+        }
+      });
+      if (dbAdmin) {
+        if (dbAdmin.password !== ADMIN_PASSWORD) {
+          await prisma.user.update({
+            where: { id: dbAdmin.id },
+            data: { password: ADMIN_PASSWORD }
+          });
+          console.log("Successfully synced admin user password with ADMIN_PASSWORD from environment variables.");
+        }
+      } else {
+        await prisma.user.create({
+          data: {
+            id: '000001',
+            username: 'admin',
+            email: ADMIN_EMAIL,
+            password: ADMIN_PASSWORD,
+            role: 'superadmin'
+          }
+        });
+        console.log("Successfully seeded default admin user into database.");
+      }
+    } catch (err) {
+      console.error("Failed to sync database admin user on startup:", err);
+    }
+  }
 });
