@@ -311,19 +311,6 @@ const GeneralSettingsTab = ({ settings, handleChange }: GeneralSettingsTabProps)
               <div className="flex justify-between items-center">
                 <h4 className="font-semibold text-sm text-yoga-forest">Configured Locations</h4>
                 <div className="flex gap-2">
-                  <Button 
-                    type="button"
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      if (confirm("Reset to the 5 default demo studios? This will overwrite your current locations list.")) {
-                        saveLocationsList(defaultSiteSettings.locations || []);
-                      }
-                    }} 
-                    className="text-yoga-forest border-yoga-sage/35 hover:bg-yoga-sage/10 text-xs h-9"
-                  >
-                    Reset to Demo Studios
-                  </Button>
                   <Button type="button" onClick={startAdd} size="sm" className="bg-yoga-sage hover:bg-yoga-forest text-white text-xs h-9">
                     <Plus size={14} className="mr-1" /> Add Location
                   </Button>

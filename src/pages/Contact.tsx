@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { Card } from '@/components/ui/card';
 import { defaultSiteSettings, SiteSettingsData, LocationData } from '@/config/siteSettings';
+import { siteSettingsService } from '@/services/database';
 
 interface ContactContent {
   heroTitle: string;
@@ -79,18 +80,47 @@ const Contact = () => {
       setContent(JSON.parse(storedContent));
     }
     
-    const storedSettings = localStorage.getItem('siteSettings');
-    if (storedSettings) {
+    const loadSettings = async () => {
       try {
-        const parsed = JSON.parse(storedSettings);
-        setSiteSettings({ ...defaultSiteSettings, ...parsed });
-        if (parsed.locations && parsed.locations.length > 0) {
-          setActiveLocId(parsed.locations[0].id);
+        const data = await siteSettingsService.getSettings();
+        if (data && data.socialLinks) {
+          try {
+            const parsed = JSON.parse(data.socialLinks);
+            const merged = { ...defaultSiteSettings, ...parsed };
+            setSiteSettings(merged);
+            if (merged.locations && merged.locations.length > 0) {
+              setActiveLocId(merged.locations[0].id);
+            }
+            return;
+          } catch (e) {
+            console.error("Failed to parse socialLinks JSON in Contact page", e);
+          }
+        }
+        
+        // Fallback to localStorage
+        const storedSettings = localStorage.getItem('siteSettings');
+        if (storedSettings) {
+          const parsed = JSON.parse(storedSettings);
+          setSiteSettings({ ...defaultSiteSettings, ...parsed });
+          if (parsed.locations && parsed.locations.length > 0) {
+            setActiveLocId(parsed.locations[0].id);
+          }
         }
       } catch (e) {
-        console.error(e);
+        console.error("Failed to fetch settings from database in Contact page", e);
+        // Fallback to localStorage
+        const storedSettings = localStorage.getItem('siteSettings');
+        if (storedSettings) {
+          const parsed = JSON.parse(storedSettings);
+          setSiteSettings({ ...defaultSiteSettings, ...parsed });
+          if (parsed.locations && parsed.locations.length > 0) {
+            setActiveLocId(parsed.locations[0].id);
+          }
+        }
       }
-    }
+    };
+
+    loadSettings();
   }, []);
 
   const locationsList: LocationData[] = siteSettings.locations && siteSettings.locations.length > 0
