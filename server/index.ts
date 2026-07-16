@@ -173,6 +173,41 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     adminAccounts.push({ username: 'instructors', password: INSTRUCTOR_PASSWORD, role: 'instructors', email: 'instructors@example.com' });
   }
 
+  // Check database users first
+  try {
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: username },
+          { email: username }
+        ]
+      }
+    });
+
+    if (dbUser) {
+      if (dbUser.password === password) {
+        const token = jwt.sign({ role: dbUser.role, email: dbUser.email }, ACTUAL_JWT_SECRET, { expiresIn: '24h' });
+        return res.json({
+          success: true,
+          token,
+          user: {
+            id: dbUser.id,
+            username: dbUser.username,
+            role: dbUser.role,
+            email: dbUser.email,
+            phone: dbUser.phone
+          }
+        });
+      } else {
+        // If user exists in the database but password does not match, fail immediately
+        return res.status(401).json({ error: 'Invalid username or password' });
+      }
+    }
+  } catch (error) {
+    console.error('Login DB check error:', error);
+  }
+
+  // Fallback to memory config logins only if not found in database
   const matched = adminAccounts.find(
     acc => (acc.username === username || acc.email === username) && acc.password === password
   );
@@ -189,35 +224,6 @@ app.post('/api/login', loginLimiter, async (req, res) => {
         email: matched.email
       }
     });
-  }
-
-  // Check database users
-  try {
-    const dbUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username: username },
-          { email: username }
-        ]
-      }
-    });
-
-    if (dbUser && dbUser.password === password) {
-      const token = jwt.sign({ role: dbUser.role, email: dbUser.email }, ACTUAL_JWT_SECRET, { expiresIn: '24h' });
-      return res.json({
-        success: true,
-        token,
-        user: {
-          id: dbUser.id,
-          username: dbUser.username,
-          role: dbUser.role,
-          email: dbUser.email,
-          phone: dbUser.phone
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Login DB check error:', error);
   }
 
   res.status(401).json({ error: 'Invalid username or password' });
