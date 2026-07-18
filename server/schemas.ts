@@ -69,9 +69,9 @@ export const onlineClassSchema = z.object({
 });
 
 export const userSchema = z.object({
-  id: z.string().length(6, 'User ID must be exactly 6 digits'),
+  id: z.string().min(1, 'User ID is required'),
   username: z.string().min(1, 'Username is required'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().min(1, 'Email is required'),
   password: z.string().min(1, 'Password is required'),
   role: z.enum(['guest', 'user', 'admin', 'superadmin', 'instructor']),
   phone: z.string().optional().nullable(),
