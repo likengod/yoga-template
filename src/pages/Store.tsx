@@ -111,14 +111,14 @@ export default function Store() {
       const data = await productsApi.getAll();
       
       if (!data || data.length === 0) {
-        setProducts(SEED_PRODUCTS);
+        setProducts([]);
       } else {
         // filter available and sort by date descending
         const available = data.filter((p: any) => p.is_available !== false);
         available.sort((a: any, b: any) => {
           return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
         });
-        setProducts(available.length > 0 ? available : SEED_PRODUCTS);
+        setProducts(available);
       }
     } catch (error) {
       console.error('Error loading products:', error);
