@@ -218,25 +218,7 @@ export default function AdminProducts() {
     }
   };
 
-  const handleSeed = async () => {
-    try {
-      if (!confirm('Are you sure you want to seed default demo products? This will add them to your database.')) return;
-      await productsApi.seed(SEED_PRODUCTS);
-      localStorage.setItem('products_initialized', 'true');
-      loadProducts();
-      toast({
-        title: "Success",
-        description: "Default demo products seeded successfully.",
-      });
-    } catch (error) {
-      console.error('Error seeding products:', error);
-      toast({
-        title: "Error",
-        description: "Failed to seed products",
-        variant: "destructive",
-      });
-    }
-  };
+
 
   const resetForm = () => {
     setFormData({
@@ -273,34 +255,29 @@ export default function AdminProducts() {
           <p className="text-muted-foreground">Manage your store products</p>
         </div>
         
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSeed} className="border-yoga-sage text-yoga-sage hover:bg-yoga-sage/10">
-            Seed Demo Products
-          </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Product
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingProduct ? 'Edit Product' : 'Add New Product'}
-                </DialogTitle>
-              </DialogHeader>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingProduct ? 'Edit Product' : 'Add New Product'}
+              </DialogTitle>
+            </DialogHeader>
 
-              <ProductForm
-                formData={formData}
-                setFormData={setFormData}
-                onSubmit={handleSubmit}
-                onCancel={handleDialogClose}
-                isEditing={!!editingProduct}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
+            <ProductForm
+              formData={formData}
+              setFormData={setFormData}
+              onSubmit={handleSubmit}
+              onCancel={handleDialogClose}
+              isEditing={!!editingProduct}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex justify-between items-center mb-4">
