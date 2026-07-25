@@ -6,6 +6,7 @@ import { DownloadCloud, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-reac
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { defaultSiteSettings } from '@/config/siteSettings';
 import { siteSettingsService } from '@/services/database';
+import packageJson from '../../package.json';
 
 interface AdminUpdateProps {
   onNavigate?: (tab: string, subTab?: string) => void;
@@ -200,7 +201,7 @@ const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-2xl font-bold text-yoga-forest">Website Updates</h2>
           <span className="text-sm font-medium bg-yoga-sage/20 text-yoga-forest px-3 py-1 rounded-full">
-            Version: {currentVersion}
+            Version: v{packageJson.version} {currentVersion && currentVersion !== '0.0.1' && `(Build: ${currentVersion})`}
           </span>
         </div>
         <p className="text-yoga-forest/70">Check for and install new updates using the GitHub CI/CD pipeline.</p>
