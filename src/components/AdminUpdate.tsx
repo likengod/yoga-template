@@ -19,7 +19,6 @@ const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'available' | 'up-to-date'>('idle');
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [availableVersion, setAvailableVersion] = useState<string | null>(null);
-  const [currentVersion, setCurrentVersion] = useState<string>('0.0.1');
 
   // Load GitHub config from Site Settings
   const [githubConfig, setGithubConfig] = useState({
@@ -71,11 +70,6 @@ const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
     };
 
     loadConfig();
-    
-    const savedVersion = localStorage.getItem('currentVersionSha');
-    if (savedVersion) {
-      setCurrentVersion(savedVersion.substring(0, 7));
-    }
   }, []);
 
   const handleGoToSettings = () => {
@@ -97,36 +91,33 @@ const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
     setIsChecking(true);
     
     try {
-      const response = await fetch(`https://api.github.com/repos/${githubConfig.owner}/${githubConfig.repo}/commits/main`, {
+      const response = await fetch(`https://api.github.com/repos/${githubConfig.owner}/${githubConfig.repo}/contents/package.json`, {
         headers: {
-          'Accept': 'application/vnd.github.v3+json',
+          'Accept': 'application/vnd.github.v3.raw',
           'Authorization': `token ${githubConfig.token}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const latestSha = data.sha;
-        const shortSha = latestSha.substring(0, 7);
+        const remotePackage = await response.json();
+        const remoteVersion = remotePackage.version;
+        const localVersion = packageJson.version;
         
         setLastChecked(new Date());
         
-        if (shortSha !== currentVersion && currentVersion !== '0.0.1' || currentVersion === '0.0.1') {
-          // If current version is still default 0.0.1, or differs from latest SHA
+        if (remoteVersion !== localVersion) {
           setUpdateStatus('available');
-          setAvailableVersion(shortSha);
-          // Save the full SHA temporarily so we can mark it as current after updating
-          localStorage.setItem('pendingVersionSha', latestSha);
+          setAvailableVersion(remoteVersion);
         } else {
           setUpdateStatus('up-to-date');
         }
         
         toast({
           title: "Update Check Complete",
-          description: "Successfully checked GitHub for new commits.",
+          description: "Successfully checked GitHub for new updates.",
         });
       } else {
-        throw new Error('Failed to fetch latest updates from GitHub');
+        throw new Error('Failed to fetch package.json from GitHub');
       }
     } catch (error) {
       console.error('GitHub API Error:', error);
@@ -171,13 +162,6 @@ const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
           description: "The CI/CD pipeline has been triggered. The website will update shortly.",
         });
         
-        // Mark the pending version as the new current version
-        const pending = localStorage.getItem('pendingVersionSha');
-        if (pending) {
-          localStorage.setItem('currentVersionSha', pending);
-          setCurrentVersion(pending.substring(0, 7));
-        }
-        
         setUpdateStatus('up-to-date');
       } else {
         const errorData = await response.json();
@@ -201,7 +185,7 @@ const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-2xl font-bold text-yoga-forest">Website Updates</h2>
           <span className="text-sm font-medium bg-yoga-sage/20 text-yoga-forest px-3 py-1 rounded-full">
-            Version: v{packageJson.version} {currentVersion && currentVersion !== '0.0.1' && `(Build: ${currentVersion})`}
+            Version: v{packageJson.version}
           </span>
         </div>
         <p className="text-yoga-forest/70">Check for and install new updates using the GitHub CI/CD pipeline.</p>
@@ -234,7 +218,7 @@ const AdminUpdate = ({ onNavigate }: AdminUpdateProps) => {
               <AlertCircle className="h-4 w-4 text-blue-600" />
               <AlertTitle className="text-blue-800">Update Available</AlertTitle>
               <AlertDescription className="text-blue-700">
-                A new version of the website (Commit: {availableVersion}) is available to be installed.
+                A new version of the website (v{availableVersion}) is available to be installed.
               </AlertDescription>
             </Alert>
           )}
