@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Edit, Trash2, Key, Users, Shield, Crown, GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Edit, Trash2, Key, Users, Shield, Crown, GraduationCap, Eye, EyeOff, Copy } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminPagination from './admin/AdminPagination';
 import { usersApi } from '@/services/mysqlApi';
@@ -367,6 +367,14 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
     }
   };
 
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied!",
+      description: `${label} copied to clipboard successfully.`
+    });
+  };
+
   const availableRoles = currentUser.role === 'superadmin' 
     ? ['guest', 'user', 'instructor', 'admin', 'superadmin']
     : ['guest', 'user', 'instructor'];
@@ -594,9 +602,31 @@ const AdminUsers = ({ currentUser }: AdminUsersProps) => {
                       />
                     )}
                   </TableCell>
-                  <TableCell className="py-2 font-mono text-xs text-yoga-forest font-semibold">{user.id}</TableCell>
+                  <TableCell className="py-2">
+                    <div className="flex items-center gap-1.5 font-mono text-xs text-yoga-forest font-semibold">
+                      <span>{user.id}</span>
+                      <button 
+                        onClick={() => handleCopy(user.id, "User ID")} 
+                        className="text-gray-400 hover:text-yoga-sage transition-colors p-0.5 rounded hover:bg-gray-100"
+                        title="Copy User ID"
+                      >
+                        <Copy size={13} />
+                      </button>
+                    </div>
+                  </TableCell>
                   <TableCell className="py-2 font-medium">{user.username}</TableCell>
-                  <TableCell className="py-2">{user.email}</TableCell>
+                  <TableCell className="py-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate max-w-[200px]">{user.email}</span>
+                      <button 
+                        onClick={() => handleCopy(user.email, "Email")} 
+                        className="text-gray-400 hover:text-yoga-sage transition-colors p-0.5 rounded hover:bg-gray-100"
+                        title="Copy Email"
+                      >
+                        <Copy size={13} />
+                      </button>
+                    </div>
+                  </TableCell>
                   <TableCell className="py-2">{user.phone || 'N/A'}</TableCell>
                   <TableCell className="py-2">
                     <div className="flex items-center space-x-2">
