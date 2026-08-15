@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "dev": "concurrently \"vite\" \"npm run server\"",
     "server": "cd server && npx ts-node index.ts",

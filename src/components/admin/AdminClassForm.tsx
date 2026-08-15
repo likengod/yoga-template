@@ -9,6 +9,7 @@ import { Save, X, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { OnlineClass } from '@/types/admin';
 import { useInstructorsData } from '@/hooks/useInstructorsData';
+import ImagePicker from '../ImagePicker';
 
 interface AdminClassFormProps {
   initialData: OnlineClass | null;
@@ -109,23 +110,13 @@ const AdminClassForm: React.FC<AdminClassFormProps> = ({ initialData, onSubmit, 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="title">Class Title *</Label>
-          <Select 
-            value={formData.title} 
-            onValueChange={(value) => setFormData({...formData, title: value})}
-          >
-            <SelectTrigger id="title">
-              <SelectValue placeholder="Select a class type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Hatha Yoga">Hatha Yoga</SelectItem>
-              <SelectItem value="Ashtanga Yoga">Ashtanga Yoga</SelectItem>
-              <SelectItem value="Vinyasa Flow">Vinyasa Flow</SelectItem>
-              <SelectItem value="Meditation Session">Meditation Session</SelectItem>
-              <SelectItem value="Pranayama Workshop">Pranayama Workshop</SelectItem>
-              <SelectItem value="Beginners Class">Beginners Class</SelectItem>
-              <SelectItem value="Advanced Practice">Advanced Practice</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input
+            id="title"
+            value={formData.title || ''}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
+            placeholder="e.g., Ashtanga Yoga, Hatha Flow, Meditation"
+            required
+          />
         </div>
         <div className="relative">
           <Label htmlFor="instructor">Instructor *</Label>
@@ -332,11 +323,12 @@ const AdminClassForm: React.FC<AdminClassFormProps> = ({ initialData, onSubmit, 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="image">Image URL</Label>
-          <Input
+          <span className="text-xs text-muted-foreground block mb-1">Recommended size: 1200x675px (16:9 ratio)</span>
+          <ImagePicker
             id="image"
-            value={formData.image}
-            onChange={(e) => setFormData({...formData, image: e.target.value})}
-            placeholder="https://images.unsplash.com/..."
+            value={formData.image || ''}
+            onChange={(url) => setFormData({...formData, image: url})}
+            placeholder="Enter image URL or select from File Manager"
           />
         </div>
         <div>
