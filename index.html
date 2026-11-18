@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,6 +6,12 @@
     <title>SHAKTI YOGA THEME - Find Your Inner Peace</title>
     <meta name="description" content="Discover inner peace and wellness at SHAKTI YOGA THEME. Professional yoga classes, meditation, and holistic wellness programs for all levels." />
     <meta name="author" content="SHAKTI YOGA THEME" />
+
+    <!-- AI Agent & Crawler Resource Discovery (RFC 8288 Alternates) -->
+    <link rel="alternate" type="text/markdown" href="/llms.txt" title="Markdown Content for LLMs" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" title="Sitemap" />
+    <link rel="service-desc" type="application/json" href="/.well-known/mcp/server-card.json" title="MCP Server Card" />
+    <meta name="webmcp" content="search_classes, get_contact_info, get_instructors" />
 
     <!-- Favicon -->
     <link rel="icon" href="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=32&h=32&q=80" type="image/jpeg">
@@ -33,7 +38,47 @@
         }
       });
     </script>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Semantic crawlable HTML for search engines and AI agents before React mounts -->
+      <header>
+        <nav aria-label="Main Navigation">
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/classes">Our Classes</a></li>
+            <li><a href="/events">Events</a></li>
+            <li><a href="/instructors">Instructors</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+          </ul>
+        </nav>
+      </header>
+
+      <main>
+        <h1>Welcome to Shakti Yoga Studio</h1>
+        <p>Discover inner peace, meditation, and authentic yoga programs guided by certified master instructors.</p>
+        
+        <!-- WebMCP Declarative Tool Annotation -->
+        <form toolname="search_classes" tooldescription="Search available yoga classes, schedules, and pricing at Shakti Yoga Studio" action="/classes" method="GET">
+          <label for="class-query">Search Classes:</label>
+          <input type="text" id="class-query" name="q" placeholder="Hatha, Vinyasa, Meditation..." />
+          <button type="submit">Search</button>
+        </form>
+      </main>
+
+      <footer>
+        <nav aria-label="Legal & Information">
+          <ul>
+            <li><a href="/about">About</a></li>
+            <li><a href="/contact">Contact</a></li>
+            <li><a href="/terms-conditions">Terms & Conditions</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/privacy-policy">Privacy Policy</a></li>
+            <li><a href="/refund-policy">Refund Policy</a></li>
+            <li><a href="/cookies-policy">Cookies Policy</a></li>
+          </ul>
+        </nav>
+      </footer>
+    </div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>

@@ -42,22 +42,40 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.gpteng.co"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.gpteng.co", "https://checkout.razorpay.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https:", "http:", "*"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https:", "http:", "*", "https://cdn.gpteng.co"],
-      frameSrc: ["'self'", "https://www.google.com", "https://google.com", "https://www.youtube.com", "https://youtube.com"],
+      connectSrc: ["'self'", "https:", "http:", "*", "https://cdn.gpteng.co", "https://api.razorpay.com", "https://lumberjack.razorpay.com"],
+      frameSrc: ["'self'", "https://www.google.com", "https://google.com", "https://www.youtube.com", "https://youtube.com", "https://api.razorpay.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
   },
 }));
 app.use(compression());
+
+const configuredOrigins = [
+  'https://shaktiyogaraai.com',
+  'https://www.shaktiyogaraai.com',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://shaktiyogaraai.com', 'https://www.shaktiyogaraai.com'] 
-    : '*'
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      process.env.NODE_ENV !== 'production' ||
+      configuredOrigins.includes(origin) ||
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:') ||
+      !process.env.FRONTEND_URL
+    ) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 
@@ -1263,8 +1281,115 @@ const distPath = fs.existsSync(path.join(__dirname, '../dist/index.html'))
   ? path.join(__dirname, '../dist')
   : path.join(__dirname, '../../dist');
 
+const publicPath = fs.existsSync(path.join(__dirname, '../public'))
+  ? path.join(__dirname, '../public')
+  : path.join(__dirname, '../../public');
+
+// Explicit MCP Server Card endpoint (SEP-1649)
+app.get('/.well-known/mcp/server-card.json', (req, res) => {
+  const cardPath = path.join(distPath, '.well-known/mcp/server-card.json');
+  const fallbackCardPath = path.join(publicPath, '.well-known/mcp/server-card.json');
+  const target = fs.existsSync(cardPath) ? cardPath : fallbackCardPath;
+  if (fs.existsSync(target)) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.sendFile(target);
+  }
+  res.status(404).json({ error: 'Server card not found' });
+});
+
+// Explicit llms.txt & sitemap endpoints
+app.get('/llms.txt', (req, res) => {
+  const target = fs.existsSync(path.join(distPath, 'llms.txt'))
+    ? path.join(distPath, 'llms.txt')
+    : path.join(publicPath, 'llms.txt');
+  if (fs.existsSync(target)) {
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    return res.sendFile(target);
+  }
+  res.status(404).send('Not found');
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const target = fs.existsSync(path.join(distPath, 'sitemap.xml'))
+    ? path.join(distPath, 'sitemap.xml')
+    : path.join(publicPath, 'sitemap.xml');
+  if (fs.existsSync(target)) {
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    return res.sendFile(target);
+  }
+  res.status(404).send('Not found');
+});
+
+// Known valid frontend routes
+const validFrontendRoutes = new Set([
+  '/',
+  '/about',
+  '/about-us',
+  '/contact',
+  '/classes',
+  '/courses',
+  '/my-courses',
+  '/events',
+  '/instructors',
+  '/collaborations',
+  '/articles',
+  '/store',
+  '/gallery',
+  '/privacy-policy',
+  '/terms-conditions',
+  '/terms',
+  '/refund-policy',
+  '/cookies-policy',
+  '/yoga-certificate',
+  '/setup',
+  '/admin',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/llms.txt'
+]);
+
+function isValidRoute(urlPath: string): boolean {
+  const cleanPath = urlPath.split('?')[0].replace(/\/+$/, '') || '/';
+  if (validFrontendRoutes.has(cleanPath)) return true;
+  if (cleanPath.startsWith('/articles/')) return true;
+  if (cleanPath.startsWith('/courses/')) return true;
+  if (cleanPath.startsWith('/admin/')) return true;
+  if (cleanPath.startsWith('/.well-known/')) return true;
+  return false;
+}
+
 app.use(express.static(distPath));
+
+// Frontend request handler with RFC 8288 Link headers, Markdown content negotiation, and real 404 status
 app.use((req, res) => {
+  const cleanPath = req.path.split('?')[0].replace(/\/+$/, '') || '/';
+
+  // 1. Content negotiation: Serve Markdown when requested via Accept header
+  const acceptHeader = req.headers.accept || '';
+  if (acceptHeader.includes('text/markdown') || acceptHeader.includes('text/x-markdown')) {
+    const llmsPath = fs.existsSync(path.join(distPath, 'llms.txt'))
+      ? path.join(distPath, 'llms.txt')
+      : path.join(publicPath, 'llms.txt');
+    if (fs.existsSync(llmsPath)) {
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      res.setHeader('Vary', 'Accept');
+      return res.sendFile(llmsPath);
+    }
+  }
+
+  // 2. Emit RFC 8288 Link headers on homepage
+  if (cleanPath === '/') {
+    res.setHeader(
+      'Link',
+      '</llms.txt>; rel="alternate"; type="text/markdown", </sitemap.xml>; rel="sitemap"; type="application/xml", </.well-known/mcp/server-card.json>; rel="service-desc"; type="application/json"'
+    );
+  }
+
+  // 3. Return real HTTP 404 status for non-existent pages so AI agents don't treat missing pages as existing
+  if (!isValidRoute(cleanPath)) {
+    return res.status(404).sendFile(path.join(distPath, 'index.html'));
+  }
+
   res.sendFile(path.join(distPath, 'index.html'));
 });
 

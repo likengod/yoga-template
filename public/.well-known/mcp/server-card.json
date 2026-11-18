@@ -1,0 +1,27 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-card/v1.json",
+  "name": "shakti-yoga-mcp",
+  "version": "1.0.0",
+  "description": "Shakti Yoga Studio MCP server exposing yoga classes, schedules, instructors, workshops and booking tools.",
+  "url": "https://electric-lavenderblush-cassowary-93.hostingersite.com/api/mcp",
+  "homepage": "https://electric-lavenderblush-cassowary-93.hostingersite.com",
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": false
+  },
+  "tools": [
+    {
+      "name": "search_classes",
+      "description": "Search available yoga classes, schedules, and pricing at Shakti Yoga Studio."
+    },
+    {
+      "name": "get_instructors",
+      "description": "List certified yoga instructors and their bios."
+    },
+    {
+      "name": "get_contact_info",
+      "description": "Get studio contact details, location, and operating hours."
+    }
+  ]
+}

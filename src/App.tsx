@@ -118,6 +118,7 @@ const App = () => (
               <Route path="/events" element={<Events />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
+              <Route path="/terms" element={<TermsConditions />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/cookies-policy" element={<CookiesPolicy />} />
               <Route path="/yoga-certificate" element={<YogaCertificatePage />} />

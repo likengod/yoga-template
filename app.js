@@ -1,1 +1,1 @@
-require('./server/dist/index.js');
+import './server/dist/index.js';
