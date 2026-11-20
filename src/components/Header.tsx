@@ -1,21 +1,30 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { 
   Menu, X, Phone, Mail, 
   Home, Info, Calendar, BookOpen, ShoppingBag, FileText, Image as ImageIcon, Users, MessageSquare 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import LoginDialog from './LoginDialog';
 import UserMenu from './UserMenu';
-import BookingDialog from './BookingDialog';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { defaultSiteSettings, SiteSettingsData } from '@/config/siteSettings';
 import { siteSettingsService } from '@/services/database';
 
+const BookingDialog = lazy(() => import('./BookingDialog'));
+
 const Header = () => {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+
+  // Close mobile menu and ensure pointer-events are restored on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+    document.body.style.pointerEvents = '';
+    document.body.style.overflow = '';
+  }, [location.pathname]);
   const [currentUser, setCurrentUser] = useState<{
     username: string;
     role: string;
@@ -208,7 +217,7 @@ const Header = () => {
                 <div className="flex flex-col space-y-6 mt-6 overflow-y-auto pr-2">
                   {/* Header Logo in Mobile Menu */}
                   <div className="flex items-center space-x-3 pb-6 border-b border-yoga-sage/20 shrink-0">
-                    <img src={siteSettings.headerLogo} alt="Logo" className="w-10 h-10 object-contain" />
+                    <img loading="lazy" src={siteSettings.headerLogo} alt="Logo" className="w-10 h-10 object-contain" />
                     <span className="font-bold text-lg text-yoga-forest">{siteSettings.siteName}</span>
                   </div>
 
@@ -259,7 +268,11 @@ const Header = () => {
           </div>
         </div>
       </nav>
-      <BookingDialog open={isBookingOpen} onOpenChange={setIsBookingOpen} />
+      {isBookingOpen && (
+        <Suspense fallback={null}>
+          <BookingDialog open={isBookingOpen} onOpenChange={setIsBookingOpen} />
+        </Suspense>
+      )}
     </header>
   );
 };

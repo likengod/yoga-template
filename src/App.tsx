@@ -24,6 +24,8 @@ const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const RefundPolicy = React.lazy(() => import("./pages/RefundPolicy"));
 const CookiesPolicy = React.lazy(() => import("./pages/CookiesPolicy"));
 const YogaCertificatePage = React.lazy(() => import("./pages/YogaCertificatePage"));
+const VerifyCertificate = React.lazy(() => import("./pages/VerifyCertificate"));
+const VerifyInvoice = React.lazy(() => import("./pages/VerifyInvoice"));
 const SetupWizard = React.lazy(() => import("./pages/SetupWizard"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const Courses = React.lazy(() => import("./pages/Courses"));
@@ -31,13 +33,11 @@ const CourseDetail = React.lazy(() => import("./pages/CourseDetail"));
 const CourseWatch = React.lazy(() => import("./pages/CourseWatch"));
 const MyCourses = React.lazy(() => import("./pages/MyCourses"));
 
+import LoadingScreen from "@/components/LoadingScreen";
+
 const queryClient = new QueryClient();
 
-const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-yoga-cream">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yoga-forest"></div>
-  </div>
-);
+const LoadingSpinner = () => <LoadingScreen />;
 
 const SetupGuard = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
@@ -45,34 +45,92 @@ const SetupGuard = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Safety net: ensure pointer-events and scroll lock from Radix dialogs/sheets/menus never freeze the page
   useEffect(() => {
-    const checkStatus = async () => {
+    document.body.style.pointerEvents = '';
+    document.body.style.overflow = '';
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchWithQuickTimeout = async (url: string, ms = 2500): Promise<Response | null> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
       try {
-        const response = await fetch('/api/setup/status');
-        if (!response.ok) {
-          throw new Error(`Server returned status ${response.status}`);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+      } catch {
+        clearTimeout(timer);
+        return null;
+      }
+    };
+
+    const checkStatus = async () => {
+      let isConfigured = false;
+      let checkPerformed = false;
+
+      // 1. Check Node.js /api/setup/status first
+      try {
+        const response = await fetchWithQuickTimeout('/api/setup/status', 2500);
+        if (response && response.ok) {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await response.json();
+            if (typeof data.isConfigured === 'boolean') {
+              isConfigured = data.isConfigured;
+              checkPerformed = true;
+            }
+          }
         }
-        const data = await response.json();
-        
-        if (!data.isConfigured && location.pathname !== '/setup') {
-          navigate('/setup', { replace: true });
-        } else if (data.isConfigured && location.pathname === '/setup') {
-          navigate('/', { replace: true });
+      } catch (err) {
+        // Node backend not responding
+      }
+
+      // 2. Fallback to PHP status check if Node.js backend was not reached
+      if (!checkPerformed) {
+        try {
+          const phpRes = await fetchWithQuickTimeout('/setup.php?action=status', 2500);
+          if (phpRes && phpRes.ok) {
+            const phpType = phpRes.headers.get('content-type') || '';
+            if (phpType.includes('application/json')) {
+              const phpData = await phpRes.json();
+              if (typeof phpData.isConfigured === 'boolean') {
+                isConfigured = phpData.isConfigured;
+                checkPerformed = true;
+              }
+            }
+          }
+        } catch (phpErr) {
+          // PHP check error
         }
-        setError(null);
-      } catch (err: any) {
-        console.error('Failed to check setup status', err);
-        setError('Cannot connect to the backend server. Please verify that your backend server is running.');
+      }
+
+      if (isCancelled) return;
+
+      // Strict Enforcement:
+      // If database is NOT configured / connected -> Open Setup Wizard
+      // If database IS configured / connected -> Block Setup Wizard and redirect to home
+      if (!isConfigured) {
         if (location.pathname !== '/setup') {
           navigate('/setup', { replace: true });
         }
-      } finally {
-        setLoading(false);
+      } else {
+        if (location.pathname === '/setup') {
+          navigate('/', { replace: true });
+        }
       }
+
+      setLoading(false);
     };
     
     checkStatus();
-  }, [navigate, location]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [navigate, location.pathname]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -101,6 +159,7 @@ const App = () => (
             <Route element={<SetupGuard><Outlet /></SetupGuard>}>
               <Route path="/" element={<Index />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/:tab" element={<Admin />} />
               <Route path="/articles" element={<Articles />} />
               <Route path="/articles/:id" element={<ArticleDetail />} />
               <Route path="/gallery" element={<Gallery />} />
@@ -118,10 +177,16 @@ const App = () => (
               <Route path="/events" element={<Events />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-conditions" element={<TermsConditions />} />
-              <Route path="/terms" element={<TermsConditions />} />
               <Route path="/refund-policy" element={<RefundPolicy />} />
               <Route path="/cookies-policy" element={<CookiesPolicy />} />
               <Route path="/yoga-certificate" element={<YogaCertificatePage />} />
+              <Route path="/certificate" element={<YogaCertificatePage />} />
+              <Route path="/verify-certificate" element={<VerifyCertificate />} />
+              <Route path="/verify-certificate/:id" element={<VerifyCertificate />} />
+              <Route path="/verify" element={<VerifyCertificate />} />
+              <Route path="/verify/:id" element={<VerifyCertificate />} />
+              <Route path="/verify-invoice" element={<VerifyInvoice />} />
+              <Route path="/verify-invoice/:invoiceNumber" element={<VerifyInvoice />} />
             </Route>
             <Route path="/setup" element={<SetupGuard><SetupWizard /></SetupGuard>} />
             <Route path="*" element={<NotFound />} />

@@ -1,0 +1,23 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. Allow direct execution of setup.php, api.php, and existing files
+  RewriteRule ^setup\.php$ - [L]
+  RewriteRule ^api\.php$ - [L]
+
+  # 2. High Performance API Route: executes via native PHP API bridge with zero proxy delay
+  RewriteCond %{REQUEST_URI} ^/api [NC]
+  RewriteRule ^api/(.*)$ api.php?route=$1 [QSA,L]
+
+  # 3. Forward /uploads if file exists
+  RewriteCond %{REQUEST_URI} ^/uploads [NC]
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^uploads/(.*)$ uploads/$1 [L]
+
+  # 4. Standard SPA Routing for React frontend
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

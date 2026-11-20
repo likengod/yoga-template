@@ -10,6 +10,15 @@ export const articleSchema = z.object({
   published: z.boolean().optional().default(false),
   featured: z.boolean().optional().default(false),
   views: z.number().int().nonnegative().optional().default(0),
+  seo_title: z.string().optional().nullable(),
+  seo_description: z.string().optional().nullable(),
+  seo_keywords: z.string().optional().nullable(),
+  canonical_url: z.string().optional().nullable(),
+  geo_region: z.string().optional().nullable(),
+  geo_placename: z.string().optional().nullable(),
+  geo_position: z.string().optional().nullable(),
+  aeo_key_takeaways: z.string().optional().nullable(),
+  aeo_faq_json: z.string().optional().nullable(),
 });
 
 export const productSchema = z.object({
@@ -106,4 +115,38 @@ export const eventSchema = z.object({
   joinUrl: z.string().min(1, 'Join URL is required'),
   buttonText: z.string().optional().nullable(),
   buttonUrl: z.string().optional().nullable(),
+});
+
+const isRepetitiveOrSequential = (phone: string): boolean => {
+  const clean = phone.replace(/\D/g, '');
+  if (clean.length < 10) return true;
+  // All same digit e.g. 0000000000 or 1111111111
+  if (/^(\d)\1+$/.test(clean)) return true;
+  // Common sequential dummy numbers
+  if (clean.includes('123456789') || clean.includes('987654321') || clean.includes('0123456789')) return true;
+  return false;
+};
+
+export const bookingSchema = z.object({
+  name: z.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(60, 'Name must be under 60 characters')
+    .refine(val => !/https?:\/\/|\.ru|\.com|\.xyz|<[^>]+>/i.test(val), {
+      message: 'Name cannot contain links, URLs, or special markup'
+    }),
+  email: z.string().email('Please enter a valid email address').max(100),
+  phone: z.string()
+    .min(10, 'Phone number must be at least 10 digits')
+    .max(20, 'Phone number is too long')
+    .refine(val => !isRepetitiveOrSequential(val), {
+      message: 'Please enter a valid personal phone number'
+    }),
+  class_type: z.string().min(1, 'Please select a class type').max(100),
+  preferred_date: z.string().min(1, 'Please select a preferred date').max(50),
+  instructor: z.string().optional().nullable(),
+  preferred_time: z.string().optional().nullable(),
+  experience: z.string().optional().nullable(),
+  special_requests: z.string().max(500, 'Special requests must be under 500 characters').optional().nullable(),
+  b_hp_url: z.string().optional().nullable(),
+  _t_token: z.union([z.number(), z.string()]).optional().nullable(),
 });

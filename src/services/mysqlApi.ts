@@ -1,13 +1,18 @@
 import { api } from '@/services/api';
-import { SEED_ARTICLES } from '@/utils/seedData';
 
 export const articlesApi = {
-  // GET all published articles (MySQL → fallback to seed)
-  async getAll() {
+  // GET all published articles (MySQL → fallback to seed only if DB offline and not cleared)
+  async getAll(options?: { summary?: boolean }) {
     try {
-      const data = await api.get('/articles');
-      return Array.isArray(data) ? data : SEED_ARTICLES;
+      const endpoint = options?.summary ? '/articles?summary=true' : '/articles';
+      const data = await api.get(endpoint);
+      if (Array.isArray(data)) return data;
+      return [];
     } catch {
+      if (localStorage.getItem('articles_cleared') === 'true') {
+        return [];
+      }
+      const { SEED_ARTICLES } = await import('@/utils/seedData');
       return SEED_ARTICLES;
     }
   },
@@ -16,10 +21,12 @@ export const articlesApi = {
   async getById(id: string) {
     try {
       const data = await api.get(`/articles/${id}`);
-      return data;
+      if (data) return data;
+      const { SEED_ARTICLES } = await import('@/utils/seedData');
+      return (SEED_ARTICLES as any[]).find(a => a.id === id) || null;
     } catch {
-      const seed = (SEED_ARTICLES as any[]).find(a => a.id === id);
-      return seed || null;
+      const { SEED_ARTICLES } = await import('@/utils/seedData');
+      return (SEED_ARTICLES as any[]).find(a => a.id === id) || null;
     }
   },
 

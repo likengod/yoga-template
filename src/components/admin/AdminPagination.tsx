@@ -12,13 +12,14 @@ interface AdminPaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  className?: string;
 }
 
-const AdminPagination = ({ currentPage, totalPages, onPageChange }: AdminPaginationProps) => {
+const AdminPagination = ({ currentPage, totalPages, onPageChange, className }: AdminPaginationProps) => {
   if (totalPages <= 1) return null;
 
   return (
-    <Pagination className="mt-4">
+    <Pagination className={className ?? "mt-4"}>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious 

@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import { Users, Eye, MessageSquare, Calendar, TrendingUp, Clock, Globe, Smartphone } from 'lucide-react';
+import { Users, Eye, MessageSquare, Calendar, TrendingUp, Clock, Globe, Smartphone, BarChart3 } from 'lucide-react';
+import AdminHeader from './admin/AdminHeader';
+import AdminStatCard from './admin/AdminStatCard';
 
 const AdminDashboard = () => {
   const [analyticsData, setAnalyticsData] = useState({
@@ -69,81 +71,54 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-yoga-forest">Analytics Dashboard</h2>
-          <p className="text-yoga-forest/70">Track your website performance and user engagement</p>
-        </div>
-        <div className="text-sm text-yoga-forest/70">
-          Last updated: {new Date().toLocaleString()}
-        </div>
-      </div>
+      <AdminHeader
+        title="Analytics Dashboard"
+        description="Track your website performance, bookings, and user engagement metrics"
+        icon={BarChart3}
+        actions={
+          <span className="text-xs text-yoga-forest/60 bg-white/60 border border-yoga-sage/20 px-3 py-1.5 rounded-full">
+            Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        }
+      />
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-yoga-sage/20 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-yoga-sage" />
-            </div>
-            <div>
-              <p className="text-sm text-yoga-forest/70">Total Visitors</p>
-              <p className="text-2xl font-bold text-yoga-forest">{analyticsData.totalVisitors.toLocaleString()}</p>
-              <p className="text-xs text-green-600 flex items-center">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                +12% from last month
-              </p>
-            </div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <AdminStatCard
+          title="Total Visitors"
+          value={analyticsData.totalVisitors.toLocaleString()}
+          icon={Users}
+          trend={{ value: "+12% from last month", isPositive: true }}
+          iconBgClass="bg-yoga-sage/20 border border-yoga-sage/30"
+          iconColorClass="text-yoga-forest"
+        />
 
-        <Card className="p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-yoga-terracotta/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-yoga-terracotta" />
-            </div>
-            <div>
-              <p className="text-sm text-yoga-forest/70">Bookings</p>
-              <p className="text-2xl font-bold text-yoga-forest">{analyticsData.bookings}</p>
-              <p className="text-xs text-green-600 flex items-center">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                +8% from last week
-              </p>
-            </div>
-          </div>
-        </Card>
+        <AdminStatCard
+          title="Bookings"
+          value={analyticsData.bookings}
+          icon={Calendar}
+          trend={{ value: "+8% from last week", isPositive: true }}
+          iconBgClass="bg-yoga-terracotta/20 border border-yoga-terracotta/30"
+          iconColorClass="text-yoga-terracotta"
+        />
 
-        <Card className="p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-yoga-forest/20 rounded-lg flex items-center justify-center">
-              <Eye className="w-6 h-6 text-yoga-forest" />
-            </div>
-            <div>
-              <p className="text-sm text-yoga-forest/70">Page Views</p>
-              <p className="text-2xl font-bold text-yoga-forest">{analyticsData.pageViews.toLocaleString()}</p>
-              <p className="text-xs text-green-600 flex items-center">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                +15% from last month
-              </p>
-            </div>
-          </div>
-        </Card>
+        <AdminStatCard
+          title="Page Views"
+          value={analyticsData.pageViews.toLocaleString()}
+          icon={Eye}
+          trend={{ value: "+15% from last month", isPositive: true }}
+          iconBgClass="bg-yoga-forest/20 border border-yoga-forest/30"
+          iconColorClass="text-yoga-forest"
+        />
 
-        <Card className="p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-yoga-forest/70">Inquiries</p>
-              <p className="text-2xl font-bold text-yoga-forest">{analyticsData.inquiries}</p>
-              <p className="text-xs text-green-600 flex items-center">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                +5% from last week
-              </p>
-            </div>
-          </div>
-        </Card>
+        <AdminStatCard
+          title="Inquiries"
+          value={analyticsData.inquiries}
+          icon={MessageSquare}
+          trend={{ value: "+5% from last week", isPositive: true }}
+          iconBgClass="bg-blue-500/15 border border-blue-500/25"
+          iconColorClass="text-blue-600"
+        />
       </div>
 
       {/* Charts Section */}

@@ -2,11 +2,12 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { Calendar, FileText, Home, Settings, RefreshCw, Trash, Award, BarChart3, UserCog, Users, Video, MessageSquare, FolderOpen, Image, ShoppingCart, Search, Bookmark, BookOpen } from 'lucide-react';
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Calendar, FileText, Home, Settings, RefreshCw, Trash, Award, BarChart3, UserCog, Users, Video, MessageSquare, FolderOpen, Image, ShoppingCart, Search, Bookmark, BookOpen, Receipt } from 'lucide-react';
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import UserMenu from '@/components/UserMenu';
 import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
+import AdminErrorBoundary from './admin/AdminErrorBoundary';
 
 const AdminArticles = lazy(() => import('./AdminArticles'));
 const AdminGallery = lazy(() => import('./AdminGallery'));
@@ -29,6 +30,7 @@ const AdminPages = lazy(() => import('./AdminPages'));
 const AdminCertificates = lazy(() => import('./AdminCertificates'));
 const AdminFavicon = lazy(() => import('./AdminFavicon'));
 const AdminCourses = lazy(() => import('./AdminCourses'));
+const AdminBilling = lazy(() => import('./admin/AdminBilling'));
 
 interface AdminPanelProps {
   currentUser: {
@@ -42,9 +44,19 @@ interface AdminPanelProps {
 const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { tab: urlTab } = useParams<{ tab?: string }>();
+  const [searchParams] = useSearchParams();
+
   const isInstructor = currentUser.role?.toLowerCase() === 'instructor' || currentUser.role?.toLowerCase() === 'instructors';
-  const [activeTab, setActiveTab] = useState(isInstructor ? 'bookings' : 'dashboard');
+  const defaultTab = isInstructor ? 'bookings' : 'dashboard';
+
+  // Synchronize with URL /admin/:tab or /admin?tab=:tab
+  const activeTab = urlTab || searchParams.get('tab') || defaultTab;
   const [settingsTab, setSettingsTab] = useState('general');
+
+  const handleTabChange = (tabId: string) => {
+    navigate(`/admin/${tabId}`);
+  };
 
   const handleClearCache = () => {
     // Clear all website cache
@@ -151,6 +163,13 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
       id: "certificates"
     }]
   }, {
+    title: "Finance & Sales",
+    items: [{
+      title: "Billing & Finance",
+      icon: Receipt,
+      id: "billing"
+    }]
+  }, {
     title: "SEO & Settings",
     items: [{
       title: "Site Settings",
@@ -244,98 +263,150 @@ const AdminPanel = ({ currentUser, onLogout }: AdminPanelProps) => {
         return <AdminPages />;
       case 'updates':
         return <AdminUpdate onNavigate={(tab, subTab) => {
-          setActiveTab(tab);
+          handleTabChange(tab);
           if (subTab) {
             setSettingsTab(subTab);
           }
         }} />;
       case 'favicon':
         return <AdminFavicon />;
+      case 'billing':
+        return <AdminBilling />;
       default:
         return <AdminDashboard />;
     }
   };
 
-  return <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <Sidebar>
-          <SidebarContent>
-            <div className="p-6 border-b border-yoga-sage/20 bg-white">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-10 h-10 shrink-0">
-                  <img loading="lazy" src="/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png" alt="Logo" className="w-full h-full object-contain" />
-                </div>
-                <h1 className="text-lg font-bold text-yoga-forest leading-tight whitespace-nowrap truncate">SHAKTI YOGA</h1>
+  return (
+    <SidebarProvider>
+      <AdminPanelInner
+        currentUser={currentUser}
+        onLogout={onLogout}
+        activeTab={activeTab}
+        handleTabChange={handleTabChange}
+        sidebarItems={sidebarItems}
+        isInstructor={isInstructor}
+        renderContent={renderContent}
+      />
+    </SidebarProvider>
+  );
+};
+
+interface AdminPanelInnerProps {
+  currentUser: { role: string; id: string; username: string };
+  onLogout: () => void;
+  activeTab: string;
+  handleTabChange: (tabId: string) => void;
+  sidebarItems: any[];
+  isInstructor: boolean;
+  renderContent: () => React.ReactNode;
+}
+
+const AdminPanelInner = ({
+  currentUser,
+  onLogout,
+  activeTab,
+  handleTabChange,
+  sidebarItems,
+  isInstructor,
+  renderContent
+}: AdminPanelInnerProps) => {
+  const { isMobile, setOpenMobile } = useSidebar();
+  const navigate = useNavigate();
+
+  const onMenuItemClick = (tabId: string) => {
+    handleTabChange(tabId);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+    document.body.style.pointerEvents = '';
+    document.body.style.overflow = '';
+  };
+
+  return (
+    <div className="min-h-screen flex w-full">
+      <Sidebar>
+        <SidebarContent>
+          <div className="p-6 border-b border-yoga-sage/20 bg-white">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="w-10 h-10 shrink-0">
+                <img loading="lazy" src="/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
-              <p className="text-sm text-yoga-forest/70 font-medium">Admin Panel</p>
+              <h1 className="text-lg font-bold text-yoga-forest leading-tight whitespace-nowrap truncate">SHAKTI YOGA</h1>
+            </div>
+            <p className="text-sm text-yoga-forest/70 font-medium">Admin Panel</p>
+          </div>
+          
+          {(isInstructor 
+            ? [{
+                title: "Management",
+                items: [
+                  { title: "Bookings", icon: Calendar, id: "bookings" },
+                  { title: "Articles", icon: FileText, id: "articles" }
+                ]
+              }] 
+            : sidebarItems
+          ).map((section, index) => <SidebarGroup key={index}>
+              {section.title && !section.items && <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => onMenuItemClick(section.id)} isActive={activeTab === section.id}>
+                      <section.icon />
+                      <span>{section.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>}
+              
+              {section.items && <>
+                  <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {section.items.map((item: any) => <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton onClick={() => onMenuItemClick(item.id)} isActive={activeTab === item.id}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>)}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </>}
+            </SidebarGroup>)}
+        </SidebarContent>
+      </Sidebar>
+
+      <main className="flex-1 flex flex-col min-w-0 bg-yoga-cream/30">
+        <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-yoga-sage/20 sticky top-0 z-40">
+          <div className="flex justify-between items-center px-4 md:px-6 py-3 md:py-4">
+            <div className="flex items-center">
+              <SidebarTrigger className="mr-4 text-yoga-forest hover:bg-yoga-sage/10" />
+              <h2 className="font-semibold text-yoga-forest text-lg hidden sm:block">
+                {sidebarItems.flatMap(s => s.items || [{ title: s.title, id: s.id }]).find(i => i.id === activeTab)?.title || 'Admin Overview'}
+              </h2>
             </div>
             
-            {(isInstructor 
-              ? [{
-                  title: "Management",
-                  items: [
-                    { title: "Bookings", icon: Calendar, id: "bookings" },
-                    { title: "Articles", icon: FileText, id: "articles" }
-                  ]
-                }] 
-              : sidebarItems
-            ).map((section, index) => <SidebarGroup key={index}>
-                {section.title && !section.items && <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton onClick={() => setActiveTab(section.id)} isActive={activeTab === section.id}>
-                        <section.icon />
-                        <span>{section.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>}
-                
-                {section.items && <>
-                    <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {section.items.map(item => <SidebarMenuItem key={item.id}>
-                            <SidebarMenuButton onClick={() => setActiveTab(item.id)} isActive={activeTab === item.id}>
-                              <item.icon />
-                              <span>{item.title}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>)}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </>}
-              </SidebarGroup>)}
-          </SidebarContent>
-        </Sidebar>
-
-        <main className="flex-1 flex flex-col min-w-0 bg-yoga-cream/30">
-          <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-yoga-sage/20 sticky top-0 z-40">
-            <div className="flex justify-between items-center px-4 md:px-6 py-3 md:py-4">
-              <div className="flex items-center">
-                <SidebarTrigger className="mr-4 text-yoga-forest hover:bg-yoga-sage/10" />
-                <h2 className="font-semibold text-yoga-forest text-lg hidden sm:block">Dashboard Overview</h2>
-              </div>
-              
-              <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="flex text-yoga-forest border-yoga-sage/30 hover:bg-yoga-sage/10 rounded-full px-4 whitespace-nowrap"
-                  onClick={() => navigate('/')}
-                >
-                  <Home className="h-4 w-4 sm:mr-2 shrink-0" />
-                  <span className="hidden sm:inline font-medium">Back to Website</span>
-                </Button>
-                <UserMenu user={currentUser} onLogout={onLogout} isAdminPage={true} />
-              </div>
+            <div className="flex items-center space-x-2 md:space-x-4 shrink-0">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex text-yoga-forest border-yoga-sage/30 hover:bg-yoga-sage/10 rounded-full px-4 whitespace-nowrap"
+                onClick={() => navigate('/')}
+              >
+                <Home className="h-4 w-4 sm:mr-2 shrink-0" />
+                <span className="hidden sm:inline font-medium">Back to Website</span>
+              </Button>
+              <UserMenu user={currentUser} onLogout={onLogout} isAdminPage={true} />
             </div>
-          </header>
-          <div className="flex-1 p-4 md:p-6 overflow-x-hidden">
+          </div>
+        </header>
+        <div className="flex-1 p-4 md:p-6 overflow-x-hidden">
+          <AdminErrorBoundary key={activeTab} fallbackTitle={`Section: ${activeTab}`}>
             <Suspense fallback={<AdminLoadingSpinner />}>
               {renderContent()}
             </Suspense>
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>;
+          </AdminErrorBoundary>
+        </div>
+      </main>
+    </div>
+  );
 };
 
 export default AdminPanel;

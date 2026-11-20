@@ -1,23 +1,24 @@
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Allow direct access to .well-known
-  RewriteRule ^\.well-known/ - [L]
+  # 1. Allow direct execution of setup.php, api.php, and existing files
+  RewriteRule ^setup\.php$ - [L]
+  RewriteRule ^api\.php$ - [L]
 
-  # Do not rewrite existing files or directories
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
+  # 2. High Performance API Route: executes via native PHP API bridge with zero proxy delay
+  RewriteCond %{REQUEST_URI} ^/api [NC]
+  RewriteRule ^api/(.*)$ api.php?route=$1 [QSA,L]
 
-  # SPA entry point
+  # 3. Forward /uploads if file exists
+  RewriteCond %{REQUEST_URI} ^/uploads [NC]
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^uploads/(.*)$ uploads/$1 [L]
+
+  # 4. Standard SPA Routing for React frontend
   RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
-</IfModule>
-
-<IfModule mod_headers.c>
-  # RFC 8288 Link header on homepage
-  <Files "index.html">
-    Header set Link "</llms.txt>; rel=\"alternate\"; type=\"text/markdown\", </sitemap.xml>; rel=\"sitemap\"; type=\"application/xml\", </.well-known/mcp/server-card.json>; rel=\"service-desc\"; type=\"application/json\""
-  </Files>
 </IfModule>

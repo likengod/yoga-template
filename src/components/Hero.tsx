@@ -5,16 +5,33 @@ import { homeContentService, HomeContentData } from '@/services/database';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { useNavigate } from 'react-router-dom';
 
+const DEFAULT_HERO = {
+  titleTop: "DISCOVER YOUR",
+  titleBottom: "INNER PEACE",
+  subtitle: "Join our vibrant yoga community to transform your mind, body, and spirit. Expert instruction for all levels.",
+  buttonPrimary: "Start Your Journey",
+  buttonSecondary: "View Classes",
+  stats: { years: "15+", students: "20k+", classes: "50+" },
+  image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+};
+
 const Hero = () => {
   const settings = useSiteSettings();
   const navigate = useNavigate();
-  const [content, setContent] = useState<HomeContentData['hero'] | null>(null);
+  const [content, setContent] = useState<any>(DEFAULT_HERO);
 
   useEffect(() => {
+    let isMounted = true;
     const loadContent = async () => {
       try {
         const data = await homeContentService.getHomeContent();
-        setContent(data.hero);
+        if (isMounted && data && data.hero && data.hero.titleTop) {
+          setContent({
+            ...DEFAULT_HERO,
+            ...data.hero,
+            stats: { ...DEFAULT_HERO.stats, ...(data.hero.stats || {}) }
+          });
+        }
       } catch (error) {
         console.error('Hero: Error loading home content:', error);
       }
@@ -25,7 +42,13 @@ const Hero = () => {
     const handleUpdate = async () => {
       try {
         const data = await homeContentService.getHomeContent();
-        setContent(data.hero);
+        if (isMounted && data && data.hero && data.hero.titleTop) {
+          setContent({
+            ...DEFAULT_HERO,
+            ...data.hero,
+            stats: { ...DEFAULT_HERO.stats, ...(data.hero.stats || {}) }
+          });
+        }
       } catch (error) {
         console.error('Hero: Error handling update:', error);
       }
@@ -34,21 +57,10 @@ const Hero = () => {
     window.addEventListener('homeContentUpdated', handleUpdate);
 
     return () => {
+      isMounted = false;
       window.removeEventListener('homeContentUpdated', handleUpdate);
     };
   }, []);
-
-  if (!content) {
-    return (
-      <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-yoga-cream via-yoga-sand to-yoga-sage/30"></div>
-        <div className="text-center py-12 relative z-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yoga-sage mx-auto mb-4"></div>
-          <p className="text-yoga-forest/70">Loading hero section...</p>
-        </div>
-      </section>
-    );
-  }
 
   const handleWhatsAppContact = (message: string) => {
     const phoneNumber = (settings.whatsappNumber || settings.contactPhone || '').replace(/\D/g, '');

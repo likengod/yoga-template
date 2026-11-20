@@ -264,7 +264,7 @@ const AdminCourses = () => {
                       />
                     </TableCell>
                     <TableCell>
-                      <img src={course.thumbnail} alt={course.title} className="w-12 h-10 object-cover rounded-lg border" />
+                      <img loading="lazy" src={course.thumbnail} alt={course.title} className="w-12 h-10 object-cover rounded-lg border" />
                     </TableCell>
                     <TableCell className="font-semibold text-yoga-forest">{course.title}</TableCell>
                     <TableCell>{course.category}</TableCell>
@@ -382,7 +382,7 @@ const AdminCourses = () => {
                 <div className="relative w-full h-44 rounded-2xl overflow-hidden border-2 border-dashed border-yoga-sage/40 bg-yoga-cream/20 group">
                   {formData.thumbnail ? (
                     <>
-                      <img
+                      <img loading="lazy"
                         src={formData.thumbnail}
                         alt="Featured preview"
                         className="w-full h-full object-cover"

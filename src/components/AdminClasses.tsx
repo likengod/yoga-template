@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { Plus, Video, LayoutGrid, List } from 'lucide-react';
 import { OnlineClass } from '@/types/admin';
 import AdminClassForm from './admin/AdminClassForm';
 import AdminClassList from './admin/AdminClassList';
+import AdminHeader from './admin/AdminHeader';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
+import AdminEmptyState from './admin/AdminEmptyState';
 import { useClassesData } from '@/hooks/useClassesData';
+import { Badge } from '@/components/ui/badge';
 
 const AdminClasses = () => {
   const { toast } = useToast();
@@ -50,67 +54,87 @@ const AdminClasses = () => {
     });
   };
 
-  if (isLoading) return <div>Loading classes...</div>;
+  if (isLoading) {
+    return <AdminLoadingSpinner message="Loading online yoga classes..." />;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-yoga-forest">Manage Classes</h2>
-          <p className="text-yoga-forest/70">Create, edit, and manage online yoga classes ({classes.length} classes)</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className={viewMode === 'list' ? 'bg-yoga-sage text-white' : ''}
-            >
-              List
-            </Button>
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className={viewMode === 'grid' ? 'bg-yoga-sage text-white' : ''}
-            >
-              Grid
-            </Button>
-          </div>
-          
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) setEditingClass(null);
-          }}>
-            <DialogTrigger asChild>
-              <Button className="bg-yoga-sage hover:bg-yoga-forest">
-                <Plus size={16} className="mr-2" />
-                Add New Class
+      <AdminHeader
+        title="Manage Classes"
+        description="Create, edit, and organize online yoga sessions and schedules"
+        icon={Video}
+        badge={
+          <Badge variant="outline" className="text-yoga-forest border-yoga-sage/30 bg-yoga-sage/10 font-medium">
+            {classes.length} {classes.length === 1 ? 'class' : 'classes'}
+          </Badge>
+        }
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="flex bg-white border border-yoga-sage/30 rounded-lg p-1 shadow-xs">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`h-8 px-2.5 text-xs ${viewMode === 'list' ? 'bg-yoga-sage text-white' : 'text-yoga-forest'}`}
+              >
+                <List size={14} className="mr-1.5" />
+                List
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingClass ? 'Edit Class' : 'Create New Class'}
-                </DialogTitle>
-              </DialogHeader>
-              <AdminClassForm 
-                initialData={editingClass}
-                onSubmit={handleSubmit}
-                onCancel={() => setIsDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <AdminClassList 
-        classes={classes} 
-        viewMode={viewMode} 
-        onEdit={handleEdit} 
-        onDelete={handleDelete} 
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={`h-8 px-2.5 text-xs ${viewMode === 'grid' ? 'bg-yoga-sage text-white' : 'text-yoga-forest'}`}
+              >
+                <LayoutGrid size={14} className="mr-1.5" />
+                Grid
+              </Button>
+            </div>
+            
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) setEditingClass(null);
+            }}>
+              <DialogTrigger asChild>
+                <Button className="bg-yoga-sage hover:bg-yoga-forest text-white h-9 text-sm font-medium shadow-sm">
+                  <Plus size={16} className="mr-1.5" />
+                  Add New Class
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingClass ? 'Edit Class' : 'Create New Class'}
+                  </DialogTitle>
+                </DialogHeader>
+                <AdminClassForm 
+                  initialData={editingClass}
+                  onSubmit={handleSubmit}
+                  onCancel={() => setIsDialogOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+        }
       />
+
+      {classes.length === 0 ? (
+        <AdminEmptyState
+          title="No Classes Found"
+          description="You haven't scheduled any online classes yet. Click below to add your first session."
+          icon={Video}
+          actionText="Add New Class"
+          onAction={() => setIsDialogOpen(true)}
+        />
+      ) : (
+        <AdminClassList 
+          classes={classes} 
+          viewMode={viewMode} 
+          onEdit={handleEdit} 
+          onDelete={handleDelete} 
+        />
+      )}
     </div>
   );
 };

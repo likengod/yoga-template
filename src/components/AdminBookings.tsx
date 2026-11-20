@@ -3,8 +3,9 @@ import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Trash2, Download } from 'lucide-react';
+import { Search, Trash2, Download, Calendar } from 'lucide-react';
 import BookingTable from './admin/bookings/BookingTable';
+import AdminHeader from './admin/AdminHeader';
 import { bookingService } from '@/services/database';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -288,34 +289,37 @@ const AdminBookings = ({ isInstructor = false, currentUsername = '' }: AdminBook
           </div>
         )
       )}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold text-yoga-forest">Manage Bookings</h2>
-          <div className="text-sm text-yoga-forest/70 font-medium bg-yoga-sage/10 px-3 py-1 rounded-full">
-            Total: {filteredBookings.length} bookings
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-2 flex-wrap">
-          {selectedBookings.size > 0 && (
-            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Selected ({selectedBookings.size})
-            </Button>
-          )}
+      <AdminHeader
+        title="Manage Bookings"
+        description="Review student booking requests, manage attendance status, and export schedules"
+        icon={Calendar}
+        badge={
+          <Badge variant="outline" className="text-yoga-forest border-yoga-sage/30 bg-yoga-sage/10 font-medium">
+            {filteredBookings.length} {filteredBookings.length === 1 ? 'booking' : 'bookings'}
+          </Badge>
+        }
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectedBookings.size > 0 && (
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="h-9">
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                Delete Selected ({selectedBookings.size})
+              </Button>
+            )}
 
-          {!isInstructor && (
-            <Button 
-              size="sm" 
-              onClick={handleExportCSV}
-              className="h-9 bg-yoga-sage hover:bg-yoga-sage/90 shadow-sm"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-          )}
-        </div>
-      </div>
+            {!isInstructor && (
+              <Button 
+                size="sm" 
+                onClick={handleExportCSV}
+                className="h-9 bg-yoga-sage hover:bg-yoga-forest text-white shadow-sm font-medium"
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                Export CSV
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">

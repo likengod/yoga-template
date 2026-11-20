@@ -6,10 +6,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import ImagePicker from './ImagePicker';
-import { Save, Plus, Edit, Trash2, Star, Search } from 'lucide-react';
+import { Save, Plus, Edit, Trash2, Star, Search, Users } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useInstructorsData, type InstructorBase } from '@/hooks/useInstructorsData';
 import AdminPagination from './admin/AdminPagination';
+import AdminHeader from './admin/AdminHeader';
+import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
+import { Badge } from '@/components/ui/badge';
 
 interface Instructor extends InstructorBase {}
 
@@ -362,19 +365,28 @@ const AdminInstructors = () => {
     );
   }
 
-  if (isLoading) return <div>Loading instructors...</div>;
+  if (isLoading) {
+    return <AdminLoadingSpinner message="Loading instructors..." />;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-yoga-forest">
-          Manage Instructors ({instructors.length} total)
-        </h2>
-        <Button onClick={handleCreateNew} className="bg-yoga-sage hover:bg-yoga-forest">
-          <Plus size={16} className="mr-2" />
-          Add New Instructor
-        </Button>
-      </div>
+      <AdminHeader
+        title="Manage Instructors"
+        description="Add, edit, and link instructor profiles with user accounts and specialties"
+        icon={Users}
+        badge={
+          <Badge variant="outline" className="text-yoga-forest border-yoga-sage/30 bg-yoga-sage/10 font-medium">
+            {instructors.length} {instructors.length === 1 ? 'instructor' : 'instructors'}
+          </Badge>
+        }
+        actions={
+          <Button onClick={handleCreateNew} className="bg-yoga-sage hover:bg-yoga-forest text-white h-9 text-sm font-medium shadow-sm">
+            <Plus size={16} className="mr-1.5" />
+            Add New Instructor
+          </Button>
+        }
+      />
 
       <div className="mb-6 relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />

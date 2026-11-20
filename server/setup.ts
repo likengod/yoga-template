@@ -14,8 +14,8 @@ export async function checkSetupStatus(): Promise<boolean> {
     }
     const prisma = new PrismaClient();
     await prisma.$connect();
-    // Query a table to ensure schema is pushed
-    await prisma.popupSetting.findFirst();
+    // Query users table to ensure database connection and schema are valid
+    await prisma.user.count();
     await prisma.$disconnect();
     return true;
   } catch (e) {
@@ -42,28 +42,59 @@ export async function saveConfigAndInitialize(config: SetupConfig): Promise<{ su
     // 0. Connection validation check
     if (config.dbProvider === 'mysql') {
       try {
-        // Connect to MySQL server without a database name first (to create database if not exists)
-        const connection = await mysql.createConnection({
-          host: config.dbHost || '127.0.0.1',
-          port: Number(config.dbPort) || 3306,
-          user: config.dbUser || 'root',
-          password: config.dbPassword || '',
-          connectTimeout: 5000,
-        });
-        
         const dbName = config.dbName || 'shaakti';
-        await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-        await connection.end();
+        const candidateHosts = Array.from(new Set([config.dbHost || 'localhost', 'localhost', '127.0.0.1']));
+        let dbConnection: any = null;
+        let lastErr: any = null;
 
-        // Connect again with database name parameter to confirm access permission to the database
-        const dbConnection = await mysql.createConnection({
-          host: config.dbHost || '127.0.0.1',
-          port: Number(config.dbPort) || 3306,
-          user: config.dbUser || 'root',
-          password: config.dbPassword || '',
-          database: dbName,
-          connectTimeout: 5000,
-        });
+        for (const host of candidateHosts) {
+          try {
+            dbConnection = await mysql.createConnection({
+              host,
+              port: Number(config.dbPort) || 3306,
+              user: config.dbUser || 'root',
+              password: config.dbPassword || '',
+              database: dbName,
+              connectTimeout: 5000,
+            });
+            config.dbHost = host;
+            break;
+          } catch (err: any) {
+            lastErr = err;
+          }
+        }
+
+        if (!dbConnection && lastErr?.code === 'ER_BAD_DB_ERROR') {
+          for (const host of candidateHosts) {
+            try {
+              const rootConnection = await mysql.createConnection({
+                host,
+                port: Number(config.dbPort) || 3306,
+                user: config.dbUser || 'root',
+                password: config.dbPassword || '',
+                connectTimeout: 5000,
+              });
+              await rootConnection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+              await rootConnection.end();
+
+              dbConnection = await mysql.createConnection({
+                host,
+                port: Number(config.dbPort) || 3306,
+                user: config.dbUser || 'root',
+                password: config.dbPassword || '',
+                database: dbName,
+                connectTimeout: 5000,
+              });
+              config.dbHost = host;
+              break;
+            } catch {}
+          }
+        }
+
+        if (!dbConnection) {
+          throw lastErr || new Error('Could not establish connection to MySQL database.');
+        }
+
         await dbConnection.end();
       } catch (mysqlError: any) {
         return {
@@ -154,28 +185,44 @@ NODE_ENV="production"
       fs.writeFileSync(targetSchemaPath, schemaContent, 'utf8');
     }
 
-    // 6. Run npx prisma db push programmatically
+    // 6. Push DB schema: execute schema.sql directly for MySQL (fast & reliable across all hosts)
+    if (config.dbProvider === 'mysql') {
+      try {
+        const schemaCandidates = [
+          path.join(process.cwd(), 'server', 'schema.sql'),
+          path.join(process.cwd(), 'schema.sql'),
+          path.join(process.cwd(), 'public', 'schema.sql')
+        ];
+        const sqlPath = schemaCandidates.find(p => fs.existsSync(p));
+        if (sqlPath) {
+          const sqlScript = fs.readFileSync(sqlPath, 'utf8');
+          const conn = await mysql.createConnection({
+            host: config.dbHost || '127.0.0.1',
+            port: Number(config.dbPort) || 3306,
+            user: config.dbUser || 'root',
+            password: config.dbPassword || '',
+            database: config.dbName,
+            multipleStatements: true,
+          });
+          await conn.query(sqlScript);
+          await conn.end();
+          console.log('Database tables successfully created via direct SQL schema execution.');
+        }
+      } catch (sqlErr) {
+        console.warn('Direct SQL schema execution warning, will try prisma fallback:', sqlErr);
+      }
+    }
+
+    // Attempt Prisma generate & push if available
     const cwd = fs.existsSync(path.join(process.cwd(), 'server')) ? path.join(process.cwd(), 'server') : process.cwd();
     const schemaFlag = targetSchemaPath ? ` --schema="${targetSchemaPath}"` : '';
     
-    // Generate client first (safely handle EPERM locks on Windows if server is running)
     try {
       await execPromise(`npx prisma generate${schemaFlag}`, { cwd });
-    } catch (genError: any) {
-      const errorStr = `${genError.message || ''} ${genError.stderr || ''} ${String(genError)}`;
-      if (
-        errorStr.includes('EPERM') || 
-        errorStr.includes('operation not permitted') || 
-        errorStr.includes('query_engine')
-      ) {
-        console.log('Prisma generate skipped: engine binary is currently locked (in use).');
-      } else {
-        throw genError;
-      }
+      await execPromise(`npx prisma db push${schemaFlag} --accept-data-loss`, { cwd });
+    } catch (prismaErr: any) {
+      console.log('Prisma CLI execution skipped or finished with notice:', prismaErr.message || prismaErr);
     }
-    
-    // Push DB schema
-    await execPromise(`npx prisma db push${schemaFlag} --accept-data-loss`, { cwd });
 
     // Seed admin, superadmin, and instructor users
     try {

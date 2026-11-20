@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Save } from 'lucide-react';
+import { Save, FileText } from 'lucide-react';
 import ImagePicker from './ImagePicker';
 import { aboutService } from '@/services/database';
+import AdminHeader from './admin/AdminHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -178,13 +179,17 @@ const AdminAbout = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-yoga-forest">Manage About Page</h2>
-        <Button onClick={handleSave} className="bg-yoga-sage hover:bg-yoga-forest">
-          <Save size={16} className="mr-2" />
-          Save Changes
-        </Button>
-      </div>
+      <AdminHeader
+        title="Manage About Page"
+        description="Customize your studio's story, mission, philosophy cards, and values"
+        icon={FileText}
+        actions={
+          <Button onClick={handleSave} className="bg-yoga-sage hover:bg-yoga-forest text-white h-9 text-sm font-medium shadow-sm">
+            <Save size={16} className="mr-1.5" />
+            Save Changes
+          </Button>
+        }
+      />
 
       <Accordion type="multiple" defaultValue={['hero', 'story']} className="w-full space-y-4">
         

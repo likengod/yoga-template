@@ -92,10 +92,10 @@ const AdminSiteSettings = ({ defaultTab = 'general', setDefaultTab }: AdminSiteS
       }
       metaDescription.setAttribute('content', settings.metaDescription);
       
-      const ogTitle = document.querySelector('meta[property="og:title"]');
+      let ogTitle = document.querySelector('meta[property="og:title"]');
       if (ogTitle) ogTitle.setAttribute('content', settings.siteName);
       
-      const ogDesc = document.querySelector('meta[property="og:description"]');
+      let ogDesc = document.querySelector('meta[property="og:description"]');
       if (ogDesc) ogDesc.setAttribute('content', settings.metaDescription);
 
       let googleVerification = document.querySelector('meta[name="google-site-verification"]');

@@ -37,6 +37,10 @@ const BookingDialog = ({ open, onOpenChange, defaultClassType, defaultInstructor
     specialRequests: ''
   });
 
+  // Anti-bot security states
+  const [honeypot, setHoneypot] = useState('');
+  const [formOpenTime, setFormOpenTime] = useState<number>(Date.now());
+
   const [classOpen, setClassOpen] = useState(false);
   const [instructorOpen, setInstructorOpen] = useState(false);
   const [classTypes, setClassTypes] = useState<string[]>([
@@ -46,6 +50,8 @@ const BookingDialog = ({ open, onOpenChange, defaultClassType, defaultInstructor
 
   useEffect(() => {
     if (open) {
+      setFormOpenTime(Date.now());
+      setHoneypot('');
       setFormData(prev => ({
         ...prev,
         classType: defaultClassType || prev.classType,
@@ -111,7 +117,9 @@ const BookingDialog = ({ open, onOpenChange, defaultClassType, defaultInstructor
         preferred_date: formData.preferredDate,
         preferred_time: formData.preferredTime,
         experience: formData.experience,
-        special_requests: formData.specialRequests
+        special_requests: formData.specialRequests,
+        b_hp_url: honeypot || undefined,
+        _t_token: formOpenTime
       };
       await bookingService.createBooking(payload);
 
@@ -132,13 +140,14 @@ const BookingDialog = ({ open, onOpenChange, defaultClassType, defaultInstructor
         experience: '',
         specialRequests: ''
       });
+      setHoneypot('');
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('BookingDialog: Error creating booking:', error);
       toast({
         variant: "destructive",
         title: "Booking Error",
-        description: "Failed to submit booking. Please try again."
+        description: error?.message || "Failed to submit booking. Please try again."
       });
     }
   };
@@ -171,6 +180,20 @@ const BookingDialog = ({ open, onOpenChange, defaultClassType, defaultInstructor
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Honeypot anti-bot trap: invisible to humans, auto-filled by bots */}
+          <div style={{ display: 'none', opacity: 0, position: 'absolute', left: '-9999px', width: 0, height: 0 }} aria-hidden="true">
+            <label htmlFor="b_hp_url">Website URL</label>
+            <input
+              id="b_hp_url"
+              type="text"
+              name="b_hp_url"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
           {/* Personal Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-yoga-forest border-b border-yoga-sage/20 pb-2">

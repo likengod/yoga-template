@@ -29,3 +29,6 @@ server/.env
 *.db
 db/
 *.zip
+deploy/
+deploy_temp/
+deploy_node/

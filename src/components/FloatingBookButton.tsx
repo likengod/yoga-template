@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar } from 'lucide-react';
-import BookingDialog from './BookingDialog';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+
+const BookingDialog = lazy(() => import('./BookingDialog'));
 
 const FloatingBookButton = () => {
   const [showBookingDialog, setShowBookingDialog] = useState(false);
@@ -48,10 +49,14 @@ const FloatingBookButton = () => {
         </Button>
       </div>
       
-      <BookingDialog 
-        open={showBookingDialog} 
-        onOpenChange={setShowBookingDialog}
-      />
+      {showBookingDialog && (
+        <Suspense fallback={null}>
+          <BookingDialog 
+            open={showBookingDialog} 
+            onOpenChange={setShowBookingDialog}
+          />
+        </Suspense>
+      )}
     </>
   );
 };

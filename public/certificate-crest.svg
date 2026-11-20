@@ -1,0 +1,246 @@
+<svg viewBox="0 0 400 275" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leafLightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#fff6c4" />
+      <stop offset="30%" stopColor="#f5ce5f" />
+      <stop offset="70%" stopColor="#dd9f25" />
+      <stop offset="100%" stopColor="#b37a11" />
+    </linearGradient>
+
+    <linearGradient id="leafDarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#cfa029" />
+      <stop offset="40%" stopColor="#9e6d0a" />
+      <stop offset="85%" stopColor="#754c03" />
+      <stop offset="100%" stopColor="#543301" />
+    </linearGradient>
+
+    <linearGradient id="stemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#f5ce5f" />
+      <stop offset="50%" stopColor="#b57e14" />
+      <stop offset="100%" stopColor="#6e4604" />
+    </linearGradient>
+
+    <radialGradient id="berryGrad" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stopColor="#ffffff" />
+      <stop offset="25%" stopColor="#fff3a8" />
+      <stop offset="60%" stopColor="#dfa428" />
+      <stop offset="100%" stopColor="#7a4f07" />
+    </radialGradient>
+
+    <linearGradient id="ribbonFrontGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#fff7cb" />
+      <stop offset="15%" stopColor="#f8d86a" />
+      <stop offset="55%" stopColor="#d99f24" />
+      <stop offset="88%" stopColor="#b37711" />
+      <stop offset="100%" stopColor="#7a4b04" />
+    </linearGradient>
+
+    <linearGradient id="ribbonTailGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#edd076" />
+      <stop offset="50%" stopColor="#b5821c" />
+      <stop offset="100%" stopColor="#694306" />
+    </linearGradient>
+
+    <linearGradient id="ribbonFoldShadow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#2e1901" />
+      <stop offset="60%" stopColor="#452703" />
+      <stop offset="100%" stopColor="#1f1000" />
+    </linearGradient>
+
+    <radialGradient id="starGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stopColor="#ffffff" />
+      <stop offset="35%" stopColor="#fff09c" />
+      <stop offset="75%" stopColor="#dca529" />
+      <stop offset="100%" stopColor="#8c5b08" />
+    </radialGradient>
+
+    <g id="plumpLeaf">
+      <path
+        d="M 0,0 C 7,-8 7,-20 0,-30 C 1,-20 1,-8 0,0 Z"
+        fill="url(#leafDarkGrad)"
+      />
+      <path
+        d="M 0,0 C -7,-8 -7,-20 0,-30 C -1,-20 -1,-8 0,0 Z"
+        fill="url(#leafLightGrad)"
+      />
+      <line x1="0" y1="-1" x2="0" y2="-29" stroke="#fff8b8" stroke-width="0.75" stroke-linecap="round" opacity="0.9" />
+      <path
+        d="M 0,0 C 7,-8 7,-20 0,-30 C -7,-20 -7,-8 0,0 Z"
+        stroke="#6b4202"
+        stroke-width="0.4"
+        fill="none"
+        opacity="0.45"
+      />
+    </g>
+
+    <g id="leafCluster">
+      <g transform="rotate(-30) scale(1.02)">
+        <use href="#plumpLeaf" />
+      </g>
+      <g transform="rotate(24) scale(0.92)">
+        <use href="#plumpLeaf" />
+      </g>
+      <g transform="translate(0, -6) rotate(-4) scale(0.96)">
+        <use href="#plumpLeaf" />
+      </g>
+      <circle cx="-1" cy="-2" r="2.2" fill="url(#berryGrad)" stroke="#6b4202" stroke-width="0.3" />
+      <circle cx="3" cy="-4" r="1.8" fill="url(#berryGrad)" stroke="#6b4202" stroke-width="0.3" />
+    </g>
+
+    <path id="ribbonArc" d="M 96,198 Q 200,183 304,198" fill="none" />
+
+    <g id="fullLeftBranch">
+      <path
+        d="M 160,188 C 88,172 72,66 146,24"
+        stroke="url(#leafDarkGrad)"
+        stroke-width="3.2"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M 159,187 C 89,171 73,67 146,25"
+        stroke="url(#stemGrad)"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        fill="none"
+      />
+
+      <g transform="translate(148, 184) rotate(-152) scale(0.95)">
+        <use href="#leafCluster" />
+      </g>
+      <g transform="translate(127, 169) rotate(-136) scale(1.05)">
+        <use href="#leafCluster" />
+      </g>
+      <g transform="translate(111, 147) rotate(-118) scale(1.10)">
+        <use href="#leafCluster" />
+      </g>
+      <g transform="translate(102, 122) rotate(-101) scale(1.12)">
+        <use href="#leafCluster" />
+      </g>
+      <g transform="translate(101, 94) rotate(-84) scale(1.10)">
+        <use href="#leafCluster" />
+      </g>
+      <g transform="translate(108, 67) rotate(-67) scale(1.02)">
+        <use href="#leafCluster" />
+      </g>
+      <g transform="translate(122, 43) rotate(-50) scale(0.92)">
+        <use href="#leafCluster" />
+      </g>
+      <g transform="translate(144, 25) rotate(-33) scale(0.85)">
+        <g transform="rotate(-18)">
+          <use href="#plumpLeaf" />
+        </g>
+        <g transform="translate(4, -8) rotate(16) scale(0.85)">
+          <use href="#plumpLeaf" />
+        </g>
+        <circle cx="1" cy="-3" r="2.0" fill="url(#berryGrad)" />
+      </g>
+    </g>
+  </defs>
+
+  <use href="#fullLeftBranch" />
+  <use href="#fullLeftBranch" transform="translate(400, 0) scale(-1, 1)" />
+
+  <text
+    x="200"
+    y="84"
+    text-anchor="middle"
+    fill="#1b3960"
+    font-family="'Cinzel', 'Playfair Display', serif"
+    font-size="26"
+    font-weight="900"
+    letter-spacing="0.20em"
+  >SHAKTI</text>
+
+  <text
+    x="200"
+    y="106"
+    text-anchor="middle"
+    fill="#1e3e68"
+    font-family="'Cinzel', 'Montserrat', serif"
+    font-size="11.5"
+    font-weight="800"
+    letter-spacing="0.26em"
+  >VIDYA PEETHAM</text>
+
+  <g transform="translate(200, 126)">
+    <polygon points="0,-8 2.2,-2.2 8,0 2.2,2.2 0,8 -2.2,2.2 -8,0 -2.2,-2.2" fill="url(#starGrad)" />
+    <circle cx="0" cy="0" r="1.5" fill="#ffffff" />
+    <polygon points="-18,-5 -16.5,-1.5 -13,0 -16.5,1.5 -18,5 -19.5,1.5 -23,0 -19.5,-1.5" fill="url(#starGrad)" />
+    <circle cx="-18" cy="0" r="1.0" fill="#ffffff" />
+    <polygon points="18,-5 19.5,-1.5 23,0 19.5,1.5 18,5 16.5,1.5 13,0 16.5,-1.5" fill="url(#starGrad)" />
+    <circle cx="18" cy="0" r="1.0" fill="#ffffff" />
+    <line x1="-36" y1="0" x2="-26" y2="0" stroke="url(#stemGrad)" stroke-width="0.8" stroke-linecap="round" />
+    <line x1="26" y1="0" x2="36" y2="0" stroke="url(#stemGrad)" stroke-width="0.8" stroke-linecap="round" />
+  </g>
+
+  <g id="ribbonBanner">
+    <path
+      d="M 98,188 L 48,193 L 64,207 L 46,222 L 98,216 Z"
+      fill="url(#ribbonTailGrad)"
+      stroke="#633e03"
+      stroke-width="0.75"
+    />
+    <polygon points="98,188 98,216 116,204" fill="url(#ribbonFoldShadow)" />
+
+    <path
+      d="M 302,188 L 352,193 L 336,207 L 354,222 L 302,216 Z"
+      fill="url(#ribbonTailGrad)"
+      stroke="#633e03"
+      stroke-width="0.75"
+    />
+    <polygon points="302,188 302,216 284,204" fill="url(#ribbonFoldShadow)" />
+
+    <path
+      d="M 96,186 Q 200,171 304,186 L 304,214 Q 200,199 96,214 Z"
+      fill="url(#ribbonFrontGrad)"
+      stroke="#633e03"
+      stroke-width="0.9"
+    />
+
+    <path
+      d="M 98,188 Q 200,173 302,188"
+      stroke="#fffbe0"
+      stroke-width="1.1"
+      fill="none"
+    />
+
+    <path
+      d="M 98,212 Q 200,197 302,212"
+      stroke="#5c3802"
+      stroke-width="1.0"
+      fill="none"
+    />
+
+    <text
+      fill="#3d2201"
+      font-family="'Montserrat', 'Cinzel', sans-serif"
+      font-size="10.5"
+      font-weight="900"
+      letter-spacing="0.18em"
+    >
+      <textPath href="#ribbonArc" startOffset="50%" text-anchor="middle">
+        OFFICIAL ACCREDITED
+      </textPath>
+    </text>
+  </g>
+
+  <g transform="translate(0, 8)">
+    <line x1="66" y1="238" x2="114" y2="238" stroke="#a3b8cc" stroke-width="1" stroke-linecap="round" />
+    <circle cx="118" cy="238" r="1.5" fill="#1b3960" />
+
+    <text
+      x="200"
+      y="242"
+      text-anchor="middle"
+      fill="#1e3e68"
+      font-family="'Montserrat', sans-serif"
+      font-size="12"
+      font-weight="700"
+      letter-spacing="0.28em"
+    >SHAKTIYOGARAAI.COM</text>
+
+    <circle cx="282" cy="238" r="1.5" fill="#1b3960" />
+    <line x1="286" y1="238" x2="334" y2="238" stroke="#a3b8cc" stroke-width="1" stroke-linecap="round" />
+  </g>
+</svg>

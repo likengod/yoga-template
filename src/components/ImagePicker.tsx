@@ -13,9 +13,11 @@ interface ImagePickerProps {
   onChange: (value: string) => void;
   id?: string;
   placeholder?: string;
+  buttonText?: string;
+  className?: string;
 }
 
-export default function ImagePicker({ value, onChange, id, placeholder }: ImagePickerProps) {
+export default function ImagePicker({ value, onChange, id, placeholder, buttonText, className }: ImagePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,9 +35,17 @@ export default function ImagePicker({ value, onChange, id, placeholder }: ImageP
     try {
       setIsLoading(true);
       const data = await fileService.getFiles();
-      setFiles(data.filter(f => f.type && f.type.startsWith('image/')));
+      const imageFiles = (data || []).filter(f => 
+        f && (
+          (f.type && f.type.startsWith('image/')) || 
+          (f.url && f.url.match(/\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i)) ||
+          (f.name && f.name.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i))
+        )
+      );
+      setFiles(imageFiles);
     } catch (error) {
-      console.error('Error loading files:', error);
+      console.warn('Non-fatal: could not load files for picker:', error);
+      setFiles([]);
     } finally {
       setIsLoading(false);
     }
@@ -121,9 +131,9 @@ export default function ImagePicker({ value, onChange, id, placeholder }: ImageP
       />
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button type="button" variant="outline" className="flex-shrink-0">
+          <Button type="button" variant="outline" className={`flex-shrink-0 ${className || ''}`}>
             <ImageIcon className="w-4 h-4 mr-2" />
-            Select Image
+            {buttonText || "Select Image"}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">

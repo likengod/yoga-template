@@ -5,26 +5,66 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { homeContentService, HomeContentData } from '@/services/database';
 
+const DEFAULT_ABOUT = {
+  title: "Our Philosophy",
+  description: "We believe yoga is for everyone. Our approach combines ancient wisdom with modern understanding.",
+  philosophyTitle: "Mind-Body Harmony",
+  philosophyP1: "Through conscious breath and mindful movement, we create space for profound transformation.",
+  philosophyP2: "Our inclusive environment supports each student's unique journey toward wellness.",
+  button: "Learn More",
+  image: "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  features: [
+    { title: "Expert Teachers", description: "Certified instructors with years of experience." },
+    { title: "Flexible Schedule", description: "Classes from early morning to late evening." }
+  ]
+};
+
 const About = () => {
   const navigate = useNavigate();
-  const [content, setContent] = useState<HomeContentData['about'] | null>(null);
+  const [content, setContent] = useState<any>(DEFAULT_ABOUT);
 
   useEffect(() => {
+    let isMounted = true;
     const loadContent = async () => {
-      const data = await homeContentService.getHomeContent();
-      setContent(data.about);
+      try {
+        const data = await homeContentService.getHomeContent();
+        if (isMounted && data && data.about && data.about.title) {
+          setContent({
+            ...DEFAULT_ABOUT,
+            ...data.about,
+            features: Array.isArray(data.about.features) && data.about.features.length > 0 
+              ? data.about.features 
+              : DEFAULT_ABOUT.features
+          });
+        }
+      } catch (error) {
+        console.error('About: Error loading home content:', error);
+      }
     };
 
     loadContent();
 
     const handleUpdate = async () => {
-      const data = await homeContentService.getHomeContent();
-      setContent(data.about);
+      try {
+        const data = await homeContentService.getHomeContent();
+        if (isMounted && data && data.about && data.about.title) {
+          setContent({
+            ...DEFAULT_ABOUT,
+            ...data.about,
+            features: Array.isArray(data.about.features) && data.about.features.length > 0 
+              ? data.about.features 
+              : DEFAULT_ABOUT.features
+          });
+        }
+      } catch (error) {
+        console.error('About: Error handling update:', error);
+      }
     };
 
     window.addEventListener('homeContentUpdated', handleUpdate);
 
     return () => {
+      isMounted = false;
       window.removeEventListener('homeContentUpdated', handleUpdate);
     };
   }, []);
@@ -33,11 +73,9 @@ const About = () => {
     navigate('/about');
   };
 
-  if (!content) return null;
-
-  // Map icons to the dynamic features (we'll just cycle through the 4 icons)
   const icons = [Heart, Leaf, Sun, Users];
-  const featuresWithIcons = content.features.map((feature, index) => ({
+  const featuresList = Array.isArray(content?.features) ? content.features : DEFAULT_ABOUT.features;
+  const featuresWithIcons = featuresList.map((feature: any, index: number) => ({
     ...feature,
     icon: icons[index % icons.length]
   }));

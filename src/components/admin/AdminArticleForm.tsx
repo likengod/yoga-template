@@ -5,8 +5,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Bold, Italic, Underline, Link, Image, Youtube, AlignLeft, AlignCenter, AlignRight, Upload, Sparkles, Loader2 } from 'lucide-react';
+import { Save, Bold, Italic, Underline, Link, Image, Youtube, AlignLeft, AlignCenter, AlignRight, Upload, Sparkles, Loader2, Globe, MapPin, Bot, Plus, Trash2, HelpCircle } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Article } from '@/types/admin';
 
@@ -19,6 +20,20 @@ export interface ArticleFormData {
   category: string;
   views?: number;
   featured?: boolean;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+  canonical_url?: string;
+  geo_region?: string;
+  geo_placename?: string;
+  geo_position?: string;
+  aeo_key_takeaways?: string;
+  aeo_faq_json?: string;
+}
+
+interface FaqItem {
+  question: string;
+  answer: string;
 }
 
 interface AdminArticleFormProps {
@@ -37,9 +52,19 @@ const AdminArticleForm: React.FC<AdminArticleFormProps> = ({ initialData, onSubm
     image_url: '',
     category: 'general',
     views: 0,
-    featured: false
+    featured: false,
+    seo_title: '',
+    seo_description: '',
+    seo_keywords: '',
+    canonical_url: '',
+    geo_region: 'IN-UT',
+    geo_placename: 'Rishikesh, Uttarakhand, India',
+    geo_position: '30.0869;78.2676',
+    aeo_key_takeaways: '',
+    aeo_faq_json: ''
   });
 
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [showImageDialog, setShowImageDialog] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showYoutubeDialog, setShowYoutubeDialog] = useState(false);
@@ -58,6 +83,14 @@ const AdminArticleForm: React.FC<AdminArticleFormProps> = ({ initialData, onSubm
 
   useEffect(() => {
     if (initialData) {
+      let parsedFaqs: FaqItem[] = [];
+      try {
+        if (initialData.aeo_faq_json) {
+          parsedFaqs = JSON.parse(initialData.aeo_faq_json);
+        }
+      } catch (e) {}
+      setFaqs(Array.isArray(parsedFaqs) ? parsedFaqs : []);
+
       setFormData({
         title: initialData.title,
         content: initialData.content,
@@ -66,9 +99,19 @@ const AdminArticleForm: React.FC<AdminArticleFormProps> = ({ initialData, onSubm
         image_url: initialData.image_url || '',
         category: initialData.category,
         views: initialData.views || 0,
-        featured: initialData.featured || false
+        featured: initialData.featured || false,
+        seo_title: initialData.seo_title || '',
+        seo_description: initialData.seo_description || '',
+        seo_keywords: initialData.seo_keywords || '',
+        canonical_url: initialData.canonical_url || '',
+        geo_region: initialData.geo_region || 'IN-UT',
+        geo_placename: initialData.geo_placename || 'Rishikesh, Uttarakhand, India',
+        geo_position: initialData.geo_position || '30.0869;78.2676',
+        aeo_key_takeaways: initialData.aeo_key_takeaways || '',
+        aeo_faq_json: initialData.aeo_faq_json || ''
       });
     } else {
+      setFaqs([]);
       setFormData({
         title: '',
         content: '',
@@ -77,10 +120,33 @@ const AdminArticleForm: React.FC<AdminArticleFormProps> = ({ initialData, onSubm
         image_url: '',
         category: 'general',
         views: 0,
-        featured: false
+        featured: false,
+        seo_title: '',
+        seo_description: '',
+        seo_keywords: '',
+        canonical_url: '',
+        geo_region: 'IN-UT',
+        geo_placename: 'Rishikesh, Uttarakhand, India',
+        geo_position: '30.0869;78.2676',
+        aeo_key_takeaways: '',
+        aeo_faq_json: ''
       });
     }
   }, [initialData]);
+
+  const handleAddFaq = () => {
+    setFaqs([...faqs, { question: '', answer: '' }]);
+  };
+
+  const handleRemoveFaq = (index: number) => {
+    setFaqs(faqs.filter((_, i) => i !== index));
+  };
+
+  const handleFaqChange = (index: number, field: 'question' | 'answer', value: string) => {
+    const updated = [...faqs];
+    updated[index][field] = value;
+    setFaqs(updated);
+  };
 
   const generateAIContent = async () => {
     if (!aiPrompt.trim()) {
@@ -282,7 +348,12 @@ By embracing the teachings related to "${aiPrompt}", we open ourselves to profou
       });
       return;
     }
-    onSubmit(formData);
+    const cleanFaqs = faqs.filter(f => f.question.trim() && f.answer.trim());
+    const finalData: ArticleFormData = {
+      ...formData,
+      aeo_faq_json: cleanFaqs.length > 0 ? JSON.stringify(cleanFaqs) : ''
+    };
+    onSubmit(finalData);
   };
 
   return (
@@ -466,6 +537,220 @@ By embracing the teachings related to "${aiPrompt}", we open ourselves to profou
             <p><strong>Formatting Guide:</strong></p>
             <p>**Bold** | *Italic* | [Link Text](URL) | ![Image](URL) | Use toolbar buttons for easier formatting</p>
           </div>
+        </div>
+
+        {/* ============================================================= */}
+        {/* ADVANCED SEO, GEO & AEO OPTIMIZATION PANEL                     */}
+        {/* ============================================================= */}
+        <div className="border border-yoga-sage/30 rounded-lg p-4 bg-white/80 shadow-sm space-y-3">
+          <div className="flex items-center justify-between border-b pb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-yoga-terracotta" size={18} />
+              <h3 className="font-semibold text-yoga-forest text-sm md:text-base">Advanced Search & AI Optimization (SEO • GEO • AEO)</h3>
+            </div>
+            <span className="text-xs text-yoga-forest/60 bg-yoga-sage/10 px-2 py-0.5 rounded-full font-medium">Google, Maps & AI Search</span>
+          </div>
+
+          <Tabs defaultValue="seo" className="w-full">
+            <TabsList className="grid grid-cols-3 mb-3 bg-yoga-cream/80">
+              <TabsTrigger value="seo" className="flex items-center gap-1.5 text-xs">
+                <Globe size={14} className="text-yoga-forest" />
+                <span>SEO (Search)</span>
+              </TabsTrigger>
+              <TabsTrigger value="geo" className="flex items-center gap-1.5 text-xs">
+                <MapPin size={14} className="text-yoga-forest" />
+                <span>GEO (Local Maps)</span>
+              </TabsTrigger>
+              <TabsTrigger value="aeo" className="flex items-center gap-1.5 text-xs">
+                <Bot size={14} className="text-yoga-forest" />
+                <span>AEO (ChatGPT & AI)</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* TAB 1: SEO META TAGS */}
+            <TabsContent value="seo" className="space-y-3 pt-1">
+              <div className="grid md:grid-cols-2 gap-3">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor="seo_title" className="text-xs font-semibold">Custom Meta Title</Label>
+                    <span className={`text-[10px] ${((formData.seo_title || formData.title).length > 60) ? 'text-amber-600' : 'text-gray-400'}`}>
+                      {(formData.seo_title || formData.title).length}/60 chars
+                    </span>
+                  </div>
+                  <Input
+                    id="seo_title"
+                    value={formData.seo_title || ''}
+                    onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                    placeholder={formData.title || "Custom search engine title"}
+                    className="text-xs h-9"
+                  />
+                  <p className="text-[11px] text-gray-500 mt-1">Leave blank to default to the article title.</p>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor="canonical_url" className="text-xs font-semibold">Canonical URL</Label>
+                  </div>
+                  <Input
+                    id="canonical_url"
+                    value={formData.canonical_url || ''}
+                    onChange={(e) => setFormData({ ...formData, canonical_url: e.target.value })}
+                    placeholder="https://shaktiyogaraai.com/articles/custom-slug"
+                    className="text-xs h-9"
+                  />
+                  <p className="text-[11px] text-gray-500 mt-1">Prevents duplicate content penalties if published elsewhere.</p>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <Label htmlFor="seo_description" className="text-xs font-semibold">Meta Description (Snippet)</Label>
+                  <span className={`text-[10px] ${((formData.seo_description || formData.excerpt).length > 160) ? 'text-amber-600' : 'text-gray-400'}`}>
+                    {(formData.seo_description || formData.excerpt).length}/160 chars
+                  </span>
+                </div>
+                <Textarea
+                  id="seo_description"
+                  value={formData.seo_description || ''}
+                  onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+                  placeholder={formData.excerpt || "Brief summary displayed under the link in Google search results"}
+                  rows={2}
+                  className="text-xs"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="seo_keywords" className="text-xs font-semibold mb-1 block">Focus Keywords (Comma separated)</Label>
+                <Input
+                  id="seo_keywords"
+                  value={formData.seo_keywords || ''}
+                  onChange={(e) => setFormData({ ...formData, seo_keywords: e.target.value })}
+                  placeholder="yoga for beginners, pranayama breathing, morning routine, rishikesh yoga"
+                  className="text-xs h-9"
+                />
+              </div>
+            </TabsContent>
+
+            {/* TAB 2: GEO-TARGETING */}
+            <TabsContent value="geo" className="space-y-3 pt-1">
+              <div className="bg-amber-50/70 border border-amber-200/60 rounded p-2 text-[11px] text-amber-800 flex items-start gap-1.5">
+                <MapPin size={14} className="shrink-0 mt-0.5" />
+                <span>Geotagging helps Google Search & Maps identify your content for local queries like <em>"yoga near me"</em> or location-specific articles.</span>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="geo_placename" className="text-xs font-semibold mb-1 block">City / Placename</Label>
+                  <Input
+                    id="geo_placename"
+                    value={formData.geo_placename || ''}
+                    onChange={(e) => setFormData({ ...formData, geo_placename: e.target.value })}
+                    placeholder="Rishikesh, Uttarakhand"
+                    className="text-xs h-9"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="geo_region" className="text-xs font-semibold mb-1 block">Region Code (ISO 3166-2)</Label>
+                  <Input
+                    id="geo_region"
+                    value={formData.geo_region || ''}
+                    onChange={(e) => setFormData({ ...formData, geo_region: e.target.value })}
+                    placeholder="IN-UT (e.g. IN-UT, US-CA)"
+                    className="text-xs h-9"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="geo_position" className="text-xs font-semibold mb-1 block">Coordinates (Lat;Long)</Label>
+                  <Input
+                    id="geo_position"
+                    value={formData.geo_position || ''}
+                    onChange={(e) => setFormData({ ...formData, geo_position: e.target.value })}
+                    placeholder="30.0869;78.2676"
+                    className="text-xs h-9"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB 3: AEO & AI SEARCH (Answer Engine Optimization) */}
+            <TabsContent value="aeo" className="space-y-3 pt-1">
+              <div className="bg-blue-50/70 border border-blue-200/60 rounded p-2 text-[11px] text-blue-800 flex items-start gap-1.5">
+                <Bot size={14} className="shrink-0 mt-0.5" />
+                <span><strong>AEO (Answer Engine Optimization):</strong> Formats your content for <strong>Google AI Overviews, ChatGPT Search, and Perplexity</strong> with direct bullet answers and FAQPage Schema.</span>
+              </div>
+
+              <div>
+                <Label htmlFor="aeo_key_takeaways" className="text-xs font-semibold mb-1 block">Key Takeaways (Bullet Points for AI Summary)</Label>
+                <Textarea
+                  id="aeo_key_takeaways"
+                  value={formData.aeo_key_takeaways || ''}
+                  onChange={(e) => setFormData({ ...formData, aeo_key_takeaways: e.target.value })}
+                  placeholder="• 15 minutes of morning yoga reduces cortisol levels by 25%&#10;• Consistent practice enhances spine flexibility and posture&#10;• Best done on an empty stomach with deep abdominal breathing"
+                  rows={3}
+                  className="text-xs"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">AI engines pull bullet points directly into quick-answer summary cards.</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1">
+                    <HelpCircle size={14} className="text-yoga-sage" />
+                    <Label className="text-xs font-semibold">FAQ / Q&A Schema Builder (Google "People Also Ask")</Label>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAddFaq}
+                    className="h-7 text-xs border-yoga-sage text-yoga-forest hover:bg-yoga-sage hover:text-white"
+                  >
+                    <Plus size={12} className="mr-1" /> Add Q&A
+                  </Button>
+                </div>
+
+                {faqs.length === 0 ? (
+                  <div className="text-center py-3 border border-dashed rounded text-xs text-gray-400">
+                    No FAQs added yet. Click "+ Add Q&A" to generate FAQPage Google Schema for this article.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {faqs.map((faq, idx) => (
+                      <div key={idx} className="p-2.5 bg-gray-50 border rounded-md space-y-1.5 relative">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-yoga-forest">Question #{idx + 1}</span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleRemoveFaq(idx)}
+                            className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={12} />
+                          </Button>
+                        </div>
+                        <Input
+                          placeholder="e.g., What is the best time of day to practice Hatha yoga?"
+                          value={faq.question}
+                          onChange={(e) => handleFaqChange(idx, 'question', e.target.value)}
+                          className="text-xs h-8 bg-white"
+                        />
+                        <Textarea
+                          placeholder="e.g., Early morning before breakfast is considered optimal for Hatha yoga practice..."
+                          value={faq.answer}
+                          onChange={(e) => handleFaqChange(idx, 'answer', e.target.value)}
+                          rows={2}
+                          className="text-xs bg-white"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className="flex justify-end space-x-2">

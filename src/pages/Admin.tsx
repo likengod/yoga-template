@@ -7,50 +7,62 @@ import UserMenu from '@/components/UserMenu';
 import { Button } from '@/components/ui/button';
 
 const Admin = () => {
-  const [currentUser, setCurrentUser] = useState<{ username: string; role: string; id: string } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<{ username: string; role: string; id: string } | null>(() => {
+    try {
+      const stored = localStorage.getItem('currentUser');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u && (u.role === 'admin' || u.role === 'superadmin')) {
+          return u;
+        }
+      }
+    } catch {}
+    return null;
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('currentUser');
+      if (stored) {
+        const u = JSON.parse(stored);
+        return !(u && (u.role === 'admin' || u.role === 'superadmin'));
+      }
+    } catch {}
+    return true;
+  });
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Add a small delay to prevent immediate redirects on refresh
-    const checkAuth = () => {
-      try {
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          
-          // Check if user has admin or superadmin role
-          if (user.role === 'admin' || user.role === 'superadmin') {
-            setCurrentUser(user);
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Access Denied",
-              description: "You need admin or super admin privileges to access this page.",
-            });
-            navigate('/', { replace: true });
-          }
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.role === 'admin' || user.role === 'superadmin') {
+          setCurrentUser(user);
         } else {
           toast({
             variant: "destructive",
-            title: "Login Required",
-            description: "Please login with admin credentials to access this page.",
+            title: "Access Denied",
+            description: "You need admin or super admin privileges to access this page.",
           });
           navigate('/', { replace: true });
         }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login Required",
+          description: "Please login with admin credentials to access this page.",
+        });
         navigate('/', { replace: true });
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    // Small delay to prevent flash of redirect on refresh
-    const timeoutId = setTimeout(checkAuth, 100);
-    
-    return () => clearTimeout(timeoutId);
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      navigate('/', { replace: true });
+    } finally {
+      setIsLoading(false);
+    }
   }, [navigate, toast]);
 
   const handleLogout = () => {

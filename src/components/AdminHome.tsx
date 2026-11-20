@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Save } from 'lucide-react';
+import { Save, Home } from 'lucide-react';
 import { homeContentService, HomeContentData } from '@/services/database';
 import ImagePicker from './ImagePicker';
+import AdminHeader from './admin/AdminHeader';
 import {
   Accordion,
   AccordionContent,
@@ -61,12 +62,8 @@ const AdminHome = () => {
         setContent(data);
       }
     } catch (error) {
-      console.error('AdminHome: Error loading home content:', error);
-      toast({
-        variant: "destructive",
-        title: "Load Error",
-        description: "Failed to load home page content.",
-      });
+      console.warn('AdminHome: Notice loading home content, applying defaults:', error);
+      setContent(defaultContent as any);
     } finally {
       setIsLoading(false);
     }
@@ -106,13 +103,17 @@ const AdminHome = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-yoga-forest">Home Page Content</h2>
-        <Button onClick={handleSave} className="bg-yoga-sage hover:bg-yoga-forest">
-          <Save size={16} className="mr-2" />
-          Save Changes
-        </Button>
-      </div>
+      <AdminHeader
+        title="Home Page Content"
+        description="Edit the landing page hero banner, headings, statistics, and about preview"
+        icon={Home}
+        actions={
+          <Button onClick={handleSave} className="bg-yoga-sage hover:bg-yoga-forest text-white h-9 text-sm font-medium shadow-sm">
+            <Save size={16} className="mr-1.5" />
+            Save Changes
+          </Button>
+        }
+      />
 
       <Accordion type="multiple" defaultValue={['hero', 'about']} className="w-full space-y-4">
         {/* Hero Section */}

@@ -61,17 +61,39 @@ export interface SiteSettingsData {
   socialYoutube: string;
   socialLinkedin: string;
   socialSnapchat: string;
+  socialWhatsapp?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
   // Certificate Overrides
   certificateSchoolName: string;
   certificateSignatureImage: string;
   certificateRegNoTemplate: string;
   certificateTitle: string;
+  certificateSubtitle?: string;
+  certificatePresentationLine?: string;
+  certificateDescription?: string;
+  certificateConductedBy?: string;
+  certificateBannerText?: string;
+  certificateBannerTextPremium?: string;
+  certificateManagerTitle?: string;
   certificateIsoImage: string;
+  certificateLogo?: string;
+  certificateLicenseNo?: string;
 }
 
 export const defaultSiteSettings: SiteSettingsData = {
   headerLogo: '/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png',
   footerLogo: '/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png',
+  certificateLogo: '/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png',
+  certificateLicenseNo: 'Lic. No: SY-AYUSH-2024/88',
+  certificateTitle: 'CERTIFICATE OF COMPLETION',
+  certificateSubtitle: 'OF ACHIEVEMENT',
+  certificatePresentationLine: 'THIS CERTIFICATE IS PROUDLY PRESENTED TO',
+  certificateDescription: 'For having successfully completed the comprehensive training program and met all required academic and practical proficiencies in',
+  certificateConductedBy: 'Conducted by {school} at Bangalore, India',
+  certificateBannerText: 'OFFICIAL ACCREDITED',
+  certificateBannerTextPremium: 'ISO 9001:2015 CERTIFIED',
+  certificateManagerTitle: 'General Manager',
   siteName: 'Shakti Yoga Raai',
   metaDescription: 'Transform your life through authentic yoga practice with expert guidance and personalized programs.',
   contactPhone: '+91 87778 16410',
@@ -110,7 +132,7 @@ export const defaultSiteSettings: SiteSettingsData = {
   githubToken: '',
   razorpayKeyId: '',
   razorpayKeySecret: '',
-  certificateSchoolName: 'Shakti Yoga Vidya Peetham',
+  certificateSchoolName: 'Shakti Yoga RaaiKtha',
   certificateSignatureImage: '',
   certificateRegNoTemplate: 'Reg. No. {id}/ATTC/SYVP/{year}',
   certificateTitle: 'CERTIFICATE OF COMPLETION',

@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Save } from 'lucide-react';
+import { Save, MessageSquare } from 'lucide-react';
 import { contactService } from '@/services/database';
+import AdminHeader from './admin/AdminHeader';
 
 const AdminContact = () => {
   const { toast } = useToast();
@@ -86,6 +87,17 @@ const AdminContact = () => {
 
   return (
     <div className="space-y-6">
+      <AdminHeader
+        title="Contact Page Content"
+        description="Update your studio address, contact numbers, email, and hero message"
+        icon={MessageSquare}
+        actions={
+          <Button onClick={handleSave} className="bg-yoga-sage hover:bg-yoga-forest text-white h-9 text-sm font-medium shadow-sm">
+            <Save size={16} className="mr-1.5" />
+            Save Contact Content
+          </Button>
+        }
+      />
       <Card className="p-6">
         <h2 className="text-xl font-semibold text-yoga-forest mb-4">Hero Section</h2>
         

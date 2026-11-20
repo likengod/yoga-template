@@ -7,6 +7,11 @@ interface PageMeta {
   url?: string;
   type?: 'website' | 'article' | 'product';
   schemas?: object[]; // Accept array of custom JSON-LD schema objects
+  keywords?: string;
+  canonical?: string;
+  geoRegion?: string;
+  geoPlacename?: string;
+  geoPosition?: string;
 }
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80';
@@ -23,7 +28,17 @@ function setMeta(property: string, content: string, isName = false) {
   el.setAttribute('content', content);
 }
 
-export function usePageMeta({ title, description, image, url, type = 'website', schemas }: PageMeta) {
+function setCanonical(href: string) {
+  let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+  if (!link) {
+    link = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    document.head.appendChild(link);
+  }
+  link.setAttribute('href', href);
+}
+
+export function usePageMeta({ title, description, image, url, type = 'website', schemas, keywords, canonical, geoRegion, geoPlacename, geoPosition }: PageMeta) {
   useEffect(() => {
     const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
     const finalImage = image || DEFAULT_IMAGE;
@@ -35,6 +50,16 @@ export function usePageMeta({ title, description, image, url, type = 'website', 
 
     // Standard meta
     setMeta('description', finalDescription, true);
+    if (keywords) setMeta('keywords', keywords, true);
+    if (canonical) setCanonical(canonical);
+
+    // GEO Tags
+    if (geoRegion) setMeta('geo.region', geoRegion, true);
+    if (geoPlacename) setMeta('geo.placename', geoPlacename, true);
+    if (geoPosition) {
+      setMeta('geo.position', geoPosition, true);
+      setMeta('ICBM', geoPosition.replace(';', ', '), true);
+    }
 
     // Open Graph
     setMeta('og:title', fullTitle);
@@ -79,5 +104,5 @@ export function usePageMeta({ title, description, image, url, type = 'website', 
         }
       });
     };
-  }, [title, description, image, url, type, schemas]);
+  }, [title, description, image, url, type, schemas, keywords, canonical, geoRegion, geoPlacename, geoPosition]);
 }

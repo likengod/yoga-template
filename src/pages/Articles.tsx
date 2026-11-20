@@ -30,6 +30,7 @@ interface Article {
   image_url?: string;
   category: string;
   views?: number;
+  featured?: boolean;
 }
 
 
@@ -52,7 +53,7 @@ const Articles = () => {
   const loadArticles = async () => {
     try {
       setIsLoading(true);
-      const data = await articlesApi.getAll();
+      const data = await articlesApi.getAll({ summary: true });
       // Sort: featured first, then by date
       const sorted = [...data].sort((a: any, b: any) => {
         if (a.featured && !b.featured) return -1;

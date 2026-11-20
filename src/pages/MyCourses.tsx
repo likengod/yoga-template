@@ -81,7 +81,7 @@ const MyCourses = () => {
                       className="bg-white rounded-3xl overflow-hidden shadow-md flex flex-col border border-yoga-sage/10"
                     >
                       <div className="h-48 relative">
-                        <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                        <img loading="lazy" src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                         
                         {isFinished && (

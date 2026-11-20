@@ -197,18 +197,17 @@ const AdminFileManager = () => {
 
   const handleBulkDelete = async () => {
     if (selectedFiles.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedFiles.size} selected files?`)) return;
     
+    const idsToDelete = Array.from(selectedFiles);
     try {
-      const deletePromises = Array.from(selectedFiles).map(id => fileService.deleteFile(id));
-      await Promise.all(deletePromises);
-      await loadFiles();
+      await Promise.all(idsToDelete.map(id => fileService.deleteFile(id).catch(() => {})));
+      setFiles(prev => prev.filter(f => !idsToDelete.includes(f.id)));
       setSelectedFiles(new Set());
       toast({
         title: "Files Deleted",
-        description: `${selectedFiles.size} files have been permanently deleted.`,
+        description: `${idsToDelete.length} files have been permanently deleted.`,
       });
-      
-      // Reset to page 1 to be safe after bulk delete
       setCurrentPage(1);
     } catch (error) {
       toast({
@@ -220,10 +219,10 @@ const AdminFileManager = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedFiles.size === currentFiles.length) {
+    if (selectedFiles.size === files.length) {
       setSelectedFiles(new Set());
     } else {
-      setSelectedFiles(new Set(currentFiles.map(f => f.id)));
+      setSelectedFiles(new Set(files.map(f => f.id)));
     }
   };
 

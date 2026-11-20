@@ -1,17 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import AdminLoadingSpinner from './admin/AdminLoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Trash2 } from 'lucide-react';
+import { Plus, Search, Trash2, FileText } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Article } from '@/types/admin';
-import AdminArticleForm, { ArticleFormData } from './admin/AdminArticleForm';
+import type { ArticleFormData } from './admin/AdminArticleForm';
 import AdminArticleList from './admin/AdminArticleList';
-import { SEED_ARTICLES } from '@/utils/seedData';
+import AdminHeader from './admin/AdminHeader';
+import { Badge } from '@/components/ui/badge';
 import { articlesApi } from '@/services/mysqlApi';
+
+const AdminArticleForm = lazy(() => import('./admin/AdminArticleForm'));
 
 const AdminArticles = () => {
   const { toast } = useToast();
@@ -32,23 +35,27 @@ const AdminArticles = () => {
       setIsLoading(true);
       let data = await articlesApi.getAll();
       
-      // Auto-seed if database is empty
-      if (Array.isArray(data) && data.length === 0) {
-        console.log('AdminArticles: Database is empty, seeding default articles...');
+      // Auto-seed ONLY if database is empty on first-ever launch and user has NOT cleared articles
+      const hasCleared = localStorage.getItem('articles_cleared') === 'true';
+      const hasSeeded = localStorage.getItem('articles_seeded') === 'true';
+
+      if (Array.isArray(data) && data.length === 0 && !hasCleared && !hasSeeded) {
+        console.log('AdminArticles: Database is empty on initial setup, seeding default articles...');
+        localStorage.setItem('articles_seeded', 'true');
+        const { SEED_ARTICLES } = await import('@/utils/seedData');
         await articlesApi.seed(SEED_ARTICLES);
         data = await articlesApi.getAll();
       }
       
-      console.log('AdminArticles: Loaded from database:', data);
       setArticles(data || []);
     } catch (error) {
       console.error('AdminArticles: Error loading articles:', error);
-      toast({
-        title: "Database Disconnected",
-        description: "Showing fallback articles because MySQL requires a password.",
-        variant: "default",
-      });
-      setArticles(SEED_ARTICLES as Article[]);
+      if (localStorage.getItem('articles_cleared') !== 'true') {
+        const { SEED_ARTICLES } = await import('@/utils/seedData');
+        setArticles(SEED_ARTICLES as Article[]);
+      } else {
+        setArticles([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,6 +74,15 @@ const AdminArticles = () => {
           category: formData.category,
           views: formData.views || 0,
           featured: formData.featured || false,
+          seo_title: formData.seo_title || null,
+          seo_description: formData.seo_description || null,
+          seo_keywords: formData.seo_keywords || null,
+          canonical_url: formData.canonical_url || null,
+          geo_region: formData.geo_region || null,
+          geo_placename: formData.geo_placename || null,
+          geo_position: formData.geo_position || null,
+          aeo_key_takeaways: formData.aeo_key_takeaways || null,
+          aeo_faq_json: formData.aeo_faq_json || null,
           updated_at: new Date().toISOString()
         });
 
@@ -85,7 +101,16 @@ const AdminArticles = () => {
           category: formData.category,
           views: formData.views || 0,
           featured: formData.featured || false,
-          published: true
+          published: true,
+          seo_title: formData.seo_title || null,
+          seo_description: formData.seo_description || null,
+          seo_keywords: formData.seo_keywords || null,
+          canonical_url: formData.canonical_url || null,
+          geo_region: formData.geo_region || null,
+          geo_placename: formData.geo_placename || null,
+          geo_position: formData.geo_position || null,
+          aeo_key_takeaways: formData.aeo_key_takeaways || null,
+          aeo_faq_json: formData.aeo_faq_json || null,
         });
 
         toast({
@@ -115,21 +140,31 @@ const AdminArticles = () => {
     if (selectedArticles.length === 0) return;
     if (!window.confirm(`Are you sure you want to delete ${selectedArticles.length} selected articles?`)) return;
     
-    try {
-      await Promise.all(selectedArticles.map(id => articlesApi.remove(id)));
+    const countToDelete = selectedArticles.length;
+    const idsToDelete = [...selectedArticles];
 
-      await loadArticles();
+    try {
+      await Promise.all(idsToDelete.map(id => articlesApi.remove(id).catch(() => {})));
+
+      setArticles(prev => {
+        const remaining = prev.filter(a => !idsToDelete.includes(a.id));
+        if (remaining.length === 0) {
+          localStorage.setItem('articles_cleared', 'true');
+        }
+        return remaining;
+      });
       setSelectedArticles([]);
+
       toast({
         title: "Articles Deleted",
-        description: `Successfully deleted ${selectedArticles.length} articles.`,
+        description: `Successfully deleted ${countToDelete} articles.`,
       });
     } catch (error) {
       console.error('AdminArticles: Error deleting articles:', error);
       toast({
         variant: "destructive",
         title: "Delete Error",
-        description: "Failed to delete articles. They might be fallback articles.",
+        description: "Failed to delete articles. Please try again.",
       });
     }
   };
@@ -137,6 +172,7 @@ const AdminArticles = () => {
   const handleSeed = async () => {
     try {
       setIsLoading(true);
+      const { SEED_ARTICLES } = await import('@/utils/seedData');
       await articlesApi.seed(SEED_ARTICLES);
       await loadArticles();
       toast({
@@ -177,40 +213,46 @@ const AdminArticles = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-yoga-forest flex items-center gap-2">
-          <span>Manage Articles</span>
-          <span className="text-sm font-normal text-yoga-forest/60 bg-yoga-sage/10 px-2 py-0.5 rounded-full border border-yoga-sage/20">
-            {articles.length} total
-          </span>
-        </h2>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => {
-                setEditingArticle(null);
-                setIsDialogOpen(true);
-              }}
-              className="bg-yoga-sage hover:bg-yoga-forest"
-            >
-              <Plus size={16} className="mr-2" />
-              Create Article
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingArticle ? 'Edit Article' : 'Create New Article'}
-              </DialogTitle>
-            </DialogHeader>
-            <AdminArticleForm 
-              initialData={editingArticle}
-              onSubmit={handleSubmit}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
+      <AdminHeader
+        title="Manage Articles"
+        description="Publish, edit, and organize yoga wellness articles and blog posts"
+        icon={FileText}
+        badge={
+          <Badge variant="outline" className="text-yoga-forest border-yoga-sage/30 bg-yoga-sage/10 font-medium">
+            {articles.length} {articles.length === 1 ? 'article' : 'articles'}
+          </Badge>
+        }
+        actions={
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={() => {
+                  setEditingArticle(null);
+                  setIsDialogOpen(true);
+                }}
+                className="bg-yoga-sage hover:bg-yoga-forest text-white h-9 text-sm font-medium shadow-sm"
+              >
+                <Plus size={16} className="mr-1.5" />
+                Create Article
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingArticle ? 'Edit Article' : 'Create New Article'}
+                </DialogTitle>
+              </DialogHeader>
+              <Suspense fallback={<AdminLoadingSpinner />}>
+                <AdminArticleForm 
+                  initialData={editingArticle}
+                  onSubmit={handleSubmit}
+                  onCancel={() => setIsDialogOpen(false)}
+                />
+              </Suspense>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">

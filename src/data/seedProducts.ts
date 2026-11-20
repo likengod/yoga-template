@@ -1,4 +1,6 @@
-export const SEED_PRODUCTS = [
+import { Product } from '@/components/admin/products/ProductList';
+
+export const SEED_PRODUCTS: Product[] = [
   {
     id: 'prod-1',
     name: 'Premium Eco Yoga Mat',

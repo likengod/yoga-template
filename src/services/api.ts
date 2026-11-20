@@ -18,28 +18,65 @@ const handleAuthError = (status: number) => {
   }
 };
 
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeoutMs = 4000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+};
+
 export const api = {
   async get(endpoint: string) {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      headers: getHeaders()
-    });
-    if (!response.ok) {
-      handleAuthError(response.status);
-      throw new Error(`GET ${endpoint} failed`);
+    try {
+      const response = await fetchWithTimeout(`${API_URL}${endpoint}`, {
+        headers: getHeaders()
+      }, 4000);
+      if (!response.ok) {
+        handleAuthError(response.status);
+        throw new Error(`GET ${endpoint} failed`);
+      }
+      const data = await response.json();
+      try {
+        localStorage.setItem(`cache_${endpoint}`, JSON.stringify(data));
+      } catch {}
+      return data;
+    } catch (err) {
+      try {
+        const cached = localStorage.getItem(`cache_${endpoint}`);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch {}
+      throw err;
     }
-    return response.json();
   },
 
   async post(endpoint: string, body: any) {
     const isFormData = body instanceof FormData;
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetchWithTimeout(`${API_URL}${endpoint}`, {
       method: 'POST',
       headers: isFormData ? getHeaders(false) : getHeaders(true),
       body: isFormData ? body : JSON.stringify(body)
-    });
+    }, 6000);
     if (!response.ok) {
       handleAuthError(response.status);
-      throw new Error(`POST ${endpoint} failed`);
+      let errorMsg = `POST ${endpoint} failed`;
+      try {
+        const errJson = await response.json();
+        if (errJson?.error) {
+          errorMsg = errJson.error;
+          if (Array.isArray(errJson?.details) && errJson.details[0]?.message) {
+            errorMsg = errJson.details[0].message;
+          }
+        }
+      } catch {}
+      throw new Error(errorMsg);
     }
     return response.json();
   },
@@ -52,7 +89,12 @@ export const api = {
     });
     if (!response.ok) {
       handleAuthError(response.status);
-      throw new Error(`PUT ${endpoint} failed`);
+      let errorMsg = `PUT ${endpoint} failed`;
+      try {
+        const errJson = await response.json();
+        if (errJson?.error) errorMsg = errJson.error;
+      } catch {}
+      throw new Error(errorMsg);
     }
     return response.json();
   },
@@ -64,7 +106,12 @@ export const api = {
     });
     if (!response.ok) {
       handleAuthError(response.status);
-      throw new Error(`DELETE ${endpoint} failed`);
+      let errorMsg = `DELETE ${endpoint} failed`;
+      try {
+        const errJson = await response.json();
+        if (errJson?.error) errorMsg = errJson.error;
+      } catch {}
+      throw new Error(errorMsg);
     }
     const text = await response.text();
     return text ? JSON.parse(text) : { success: true };

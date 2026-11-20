@@ -28,21 +28,32 @@ model AboutContent {
 }
 
 model Article {
-  id         String   @id @default(uuid())
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  title      String
-  content    String   @db.Text
-  author     String
-  category   String?
-  excerpt    String?  @db.Text
-  image_url  String?
-  published  Boolean? @default(false)
-  featured   Boolean? @default(false)
-  views      Int?     @default(0)
+  id                String   @id @default(uuid())
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  title             String
+  content           String   @db.Text
+  author            String
+  category          String?
+  excerpt           String?  @db.Text
+  image_url         String?
+  published         Boolean? @default(false)
+  featured          Boolean? @default(false)
+  views             Int?     @default(0)
+  seo_title         String?  @db.Text
+  seo_description   String?  @db.Text
+  seo_keywords      String?  @db.Text
+  canonical_url     String?  @db.Text
+  geo_region        String?
+  geo_placename     String?
+  geo_position      String?
+  aeo_key_takeaways String?  @db.Text
+  aeo_faq_json      String?  @db.Text
 
-  @@index([published])
+  @@index([published, created_at])
   @@index([featured])
+  @@index([category])
+  @@index([created_at])
   @@map("articles")
 }
 
@@ -60,8 +71,11 @@ model Booking {
   status           String?  @default("pending")
   instructor       String?
 
+  @@index([status, created_at])
   @@index([email])
   @@index([status])
+  @@index([phone])
+  @@index([created_at])
   @@map("bookings")
 }
 
@@ -87,6 +101,7 @@ model GalleryImage {
   description String?
   views       Int?    @default(0)
 
+  @@index([views])
   @@map("gallery_images")
 }
 
@@ -121,6 +136,10 @@ model Product {
   buy_action       String?  @default("whatsapp")
   external_link    String?  @db.Text
 
+  @@index([category])
+  @@index([is_available])
+  @@index([is_featured])
+  @@index([created_at])
   @@map("products")
 }
 
@@ -154,6 +173,7 @@ model File {
   dimensions String?
   uploadDate String?
 
+  @@index([created_at])
   @@map("files")
 }
 
@@ -208,7 +228,9 @@ model OnlineClass {
   availableSeats Int?     @default(0)
   featured       Boolean? @default(false)
 
+  @@index([featured, created_at])
   @@index([featured])
+  @@index([created_at])
   @@map("online_classes")
 }
 
@@ -234,11 +256,13 @@ model YogaCertificate {
   phone          String?
   signature_url  String?
 
+  @@index([phone])
+  @@index([created_at])
   @@map("yoga_certificates")
 }
 
 model User {
-  id         String   @id
+  id         String   @id @default(uuid())
   username   String   @unique
   email      String   @unique
   password   String
@@ -247,6 +271,7 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  @@index([role])
   @@map("users")
 }
 
@@ -293,5 +318,79 @@ model Event {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
+  @@index([created_at])
   @@map("events")
+}
+
+model Invoice {
+  id               String   @id @default(uuid())
+  invoice_number   String   @unique
+  customer_name    String
+  customer_email   String
+  customer_phone   String?
+  customer_address String?
+  customer_city    String?
+  customer_state   String?
+  customer_zip     String?
+  customer_country String?
+  issue_date       String
+  due_date         String
+  status           String   @default("pending")
+  subtotal         Float    @default(0)
+  tax_amount       Float    @default(0)
+  total_amount     Float    @default(0)
+  items_json       String   @db.Text
+  notes            String?  @db.Text
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([status])
+  @@index([created_at])
+  @@map("invoices")
+}
+
+model BillingSetting {
+  id                       String   @id @default(uuid())
+  gst_rate                 Float    @default(18)
+  service_charge           Float    @default(1)
+  company_name             String?
+  company_email            String?
+  company_phone            String?
+  tax_id_type              String?  @default("PAN")
+  pan                      String?
+  license_no               String?
+  website                  String?
+  address                  String?  @db.Text
+  zip_code                 String?
+  state                    String?
+  country                  String?
+  bank_name                String?
+  account_name             String?
+  account_number           String?
+  ifsc_code                String?
+  upi_id                   String?
+  qr_code_url              String?  @db.Text
+  company_logo_url         String?  @db.Text
+  authorized_signature_url String?  @db.Text
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+
+  @@map("billing_settings")
+}
+
+model PromoCode {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  discount_type    String   @default("percentage")
+  discount_value   Float    @default(0)
+  min_order_amount Float?
+  max_uses         Int?
+  used_count       Int?     @default(0)
+  expiry_date      String?
+  is_active        Boolean? @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([code])
+  @@map("promo_codes")
 }

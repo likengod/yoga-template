@@ -31,4 +31,13 @@ export interface Article {
   published?: boolean;
   views?: number;
   featured?: boolean;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+  canonical_url?: string;
+  geo_region?: string;
+  geo_placename?: string;
+  geo_position?: string;
+  aeo_key_takeaways?: string;
+  aeo_faq_json?: string;
 }

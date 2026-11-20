@@ -6,9 +6,7 @@ import viteCompression from 'vite-plugin-compression';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const serverEnv = loadEnv(mode, path.resolve(process.cwd(), 'server'), '');
-  const rawPort = serverEnv.PORT || env.PORT || env.VITE_API_PORT || '3001';
-  const backendPort = '3001';
+  const backendPort = process.env.VITE_API_PORT || '3000';
 
   return {
     server: {
@@ -52,21 +50,7 @@ export default defineConfig(({ mode }) => {
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
-            return 'react';
-          }
-          if (id.includes('node_modules/lucide-react/') || id.includes('node_modules/recharts/')) {
-            return 'ui';
-          }
-          if (id.includes('node_modules/@tanstack/react-query/') || id.includes('node_modules/date-fns/')) {
-            return 'vendor';
-          }
-        },
-      },
-    },
+    chunkSizeWarningLimit: 1500,
   },
   };
 });

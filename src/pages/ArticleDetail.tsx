@@ -1,15 +1,21 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, ArrowLeft, Eye } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Eye, Sparkles, HelpCircle, MapPin } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ShareMenu from '@/components/ShareMenu';
 import { useScrollToTop } from '@/hooks/useScrollToTop';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { articlesApi } from '@/services/mysqlApi';
+
+interface FaqItem {
+  question: string;
+  answer: string;
+}
 
 interface Article {
   id: string;
@@ -21,6 +27,15 @@ interface Article {
   image_url?: string;
   category: string;
   views?: number;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+  canonical_url?: string;
+  geo_region?: string;
+  geo_placename?: string;
+  geo_position?: string;
+  aeo_key_takeaways?: string;
+  aeo_faq_json?: string;
 }
 
 const ArticleDetail = () => {
@@ -30,12 +45,69 @@ const ArticleDetail = () => {
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Dynamically set page meta for sharing
+  // Parse FAQs for AEO
+  const faqs: FaqItem[] = useMemo(() => {
+    if (!article?.aeo_faq_json) return [];
+    try {
+      const parsed = JSON.parse(article.aeo_faq_json);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [article?.aeo_faq_json]);
+
+  // Structured Data Schemas (Article + FAQPage JSON-LD)
+  const schemas: object[] = useMemo(() => {
+    if (!article) return [];
+    const list: object[] = [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": article.seo_title || article.title,
+        "description": article.seo_description || article.excerpt,
+        "image": article.image_url || undefined,
+        "author": {
+          "@type": "Person",
+          "name": article.author
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Shakti Yoga Raai"
+        },
+        "datePublished": article.created_at
+      }
+    ];
+
+    if (faqs.length > 0) {
+      list.push({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": faqs.map(f => ({
+          "@type": "Question",
+          "name": f.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": f.answer
+          }
+        }))
+      });
+    }
+
+    return list;
+  }, [article, faqs]);
+
+  // Dynamically set page meta for sharing & SEO / GEO / AEO
   usePageMeta({
-    title: article?.title || 'Article',
-    description: article?.excerpt || article?.content?.slice(0, 160),
+    title: article?.seo_title || article?.title || 'Article',
+    description: article?.seo_description || article?.excerpt || article?.content?.slice(0, 160),
     image: article?.image_url,
     type: 'article',
+    keywords: article?.seo_keywords,
+    canonical: article?.canonical_url,
+    geoRegion: article?.geo_region,
+    geoPlacename: article?.geo_placename,
+    geoPosition: article?.geo_position,
+    schemas
   });
 
   useEffect(() => {
@@ -62,6 +134,15 @@ const ArticleDetail = () => {
         image_url: data.image_url || undefined,
         category: data.category,
         views: data.views || 0,
+        seo_title: data.seo_title || undefined,
+        seo_description: data.seo_description || undefined,
+        seo_keywords: data.seo_keywords || undefined,
+        canonical_url: data.canonical_url || undefined,
+        geo_region: data.geo_region || undefined,
+        geo_placename: data.geo_placename || undefined,
+        geo_position: data.geo_position || undefined,
+        aeo_key_takeaways: data.aeo_key_takeaways || undefined,
+        aeo_faq_json: data.aeo_faq_json || undefined,
       });
 
       // Load related articles
@@ -151,8 +232,8 @@ const ArticleDetail = () => {
                 {article.title}
               </h1>
               
-              <div className="flex items-center justify-between text-sm text-yoga-sage mb-6 pb-6 border-b border-yoga-sage/20">
-                <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-between text-sm text-yoga-sage mb-6 pb-6 border-b border-yoga-sage/20 flex-wrap gap-2">
+                <div className="flex items-center space-x-4 flex-wrap gap-2">
                   <div className="flex items-center space-x-1">
                     <User size={14} />
                     <span>{article.author}</span>
@@ -161,6 +242,12 @@ const ArticleDetail = () => {
                     <Calendar size={14} />
                     <span>{new Date(article.created_at).toLocaleDateString()}</span>
                   </div>
+                  {article.geo_placename && (
+                    <div className="flex items-center space-x-1 text-xs text-yoga-forest/60">
+                      <MapPin size={13} className="text-yoga-terracotta" />
+                      <span>{article.geo_placename}</span>
+                    </div>
+                  )}
                 </div>
                 {article.views !== undefined && (
                   <div className="flex items-center space-x-1">
@@ -169,6 +256,19 @@ const ArticleDetail = () => {
                   </div>
                 )}
               </div>
+
+              {/* AEO Key Takeaways Summary Card */}
+              {article.aeo_key_takeaways && (
+                <div className="mb-8 p-5 bg-gradient-to-r from-yoga-cream via-amber-50/50 to-yoga-cream border-l-4 border-yoga-terracotta rounded-r-lg shadow-sm">
+                  <div className="flex items-center gap-2 mb-2 font-bold text-yoga-forest text-xs uppercase tracking-wider">
+                    <Sparkles size={15} className="text-yoga-terracotta" />
+                    <span>Key Takeaways (Quick Summary)</span>
+                  </div>
+                  <div className="text-sm text-yoga-forest/90 whitespace-pre-line leading-relaxed">
+                    {article.aeo_key_takeaways}
+                  </div>
+                </div>
+              )}
               
               <div className="prose prose-lg max-w-none text-yoga-forest">
                 {article.content.split('\n').map((paragraph, index) => (
@@ -177,6 +277,28 @@ const ArticleDetail = () => {
                   </p>
                 ))}
               </div>
+
+              {/* AEO Frequently Asked Questions Section */}
+              {faqs.length > 0 && (
+                <div className="mt-10 pt-6 border-t border-yoga-sage/20">
+                  <div className="flex items-center gap-2 mb-4">
+                    <HelpCircle size={18} className="text-yoga-sage" />
+                    <h3 className="text-xl font-bold text-yoga-forest">Frequently Asked Questions</h3>
+                  </div>
+                  <Accordion type="single" collapsible className="w-full">
+                    {faqs.map((faq, idx) => (
+                      <AccordionItem key={idx} value={`faq-${idx}`}>
+                        <AccordionTrigger className="text-left font-semibold text-yoga-forest hover:text-yoga-sage">
+                          {faq.question}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-yoga-forest/80 leading-relaxed whitespace-pre-line">
+                          {faq.answer}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </div>
+              )}
 
               {/* Share Section */}
               <div className="mt-8 pt-6 border-t border-yoga-sage/20">

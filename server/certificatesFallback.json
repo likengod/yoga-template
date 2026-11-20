@@ -1,0 +1,98 @@
+[
+  {
+    "id": "cert-demo-001",
+    "certificateId": "SY-2026-1042",
+    "studentName": "Aarav Sharma",
+    "courseName": "200-Hour Ashtanga Yoga Teacher Training",
+    "issueDate": "2026-06-15T00:00:00.000Z",
+    "instructorName": "Master Raai",
+    "phone": "+91 98765 43210",
+    "signature_url": "/uploads/signature_master_raai.png",
+    "isPremium": false,
+    "created_at": "2026-06-15T10:30:00.000Z"
+  },
+  {
+    "id": "cert-demo-002",
+    "certificateId": "SY-2026-1043",
+    "studentName": "Priya Patel",
+    "courseName": "Hatha Yoga Masterclass: Balance & Alignment",
+    "issueDate": "2026-06-20T00:00:00.000Z",
+    "instructorName": "Priya Sharma",
+    "phone": "+91 98123 45678",
+    "signature_url": "/uploads/signature_priya.png",
+    "isPremium": false,
+    "created_at": "2026-06-20T11:00:00.000Z"
+  },
+  {
+    "id": "cert-demo-003",
+    "certificateId": "SY-2026-1044",
+    "studentName": "Rahul Verma",
+    "courseName": "Vinyasa Flow & Dynamic Power Yoga",
+    "issueDate": "2026-07-02T00:00:00.000Z",
+    "instructorName": "Ananya Sen",
+    "phone": "+91 98234 56789",
+    "signature_url": "/uploads/signature_ananya.png",
+    "isPremium": false,
+    "created_at": "2026-07-02T09:15:00.000Z"
+  },
+  {
+    "id": "cert-demo-004",
+    "certificateId": "SY-2026-1045",
+    "studentName": "Neha Kulkarni",
+    "courseName": "Pranayama & Kundalini Energy Awakening",
+    "issueDate": "2026-07-10T00:00:00.000Z",
+    "instructorName": "Yogi Vikram",
+    "phone": "+91 98345 67890",
+    "signature_url": "/uploads/signature_vikram.png",
+    "isPremium": false,
+    "created_at": "2026-07-10T14:20:00.000Z"
+  },
+  {
+    "id": "cert-demo-005",
+    "certificateId": "SY-2026-1046",
+    "studentName": "Rohan Gupta",
+    "courseName": "Yoga for Beginners – Complete Foundation",
+    "issueDate": "2026-07-18T00:00:00.000Z",
+    "instructorName": "Sushmita Debnath",
+    "phone": "+91 98456 78901",
+    "signature_url": "/uploads/signature_sushmita.png",
+    "isPremium": false,
+    "created_at": "2026-07-18T16:45:00.000Z"
+  },
+  {
+    "id": "cert-demo-006",
+    "certificateId": "SY-2026-1047",
+    "studentName": "Meera Krishnan",
+    "courseName": "Restorative Yin Yoga & Sound Healing",
+    "issueDate": "2026-07-25T00:00:00.000Z",
+    "instructorName": "Master Raai",
+    "phone": "+91 98567 89012",
+    "signature_url": "/uploads/signature_master_raai.png",
+    "isPremium": false,
+    "created_at": "2026-07-25T12:00:00.000Z"
+  },
+  {
+    "id": "cert-demo-007",
+    "certificateId": "SY-2026-1048",
+    "studentName": "Vikramaditya Roy",
+    "courseName": "Advanced Pranayama & Chakra Alignment",
+    "issueDate": "2026-08-01T00:00:00.000Z",
+    "instructorName": "Yogi Vikram",
+    "phone": "+91 98678 90123",
+    "signature_url": "/uploads/signature_vikram.png",
+    "isPremium": false,
+    "created_at": "2026-08-01T15:30:00.000Z"
+  },
+  {
+    "id": "cert-demo-008",
+    "certificateId": "SY-2026-1049",
+    "studentName": "Ananya Sen",
+    "courseName": "Mindfulness & Vedic Meditation Intensive",
+    "issueDate": "2026-08-10T00:00:00.000Z",
+    "instructorName": "Sushmita Debnath",
+    "phone": "+91 98789 01234",
+    "signature_url": "/uploads/signature_sushmita.png",
+    "isPremium": false,
+    "created_at": "2026-08-10T11:10:00.000Z"
+  }
+]

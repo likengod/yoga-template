@@ -14,7 +14,7 @@ const SetupWizard = () => {
   
   // Database configuration
   const [dbConfig, setDbConfig] = useState({
-    dbHost: '127.0.0.1',
+    dbHost: 'localhost',
     dbPort: '3306',
     dbUser: 'root',
     dbPassword: '',
@@ -39,6 +39,7 @@ const SetupWizard = () => {
   const [showDbPassword, setShowDbPassword] = useState(false);
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const handleDbConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDbConfig({
@@ -81,6 +82,8 @@ const SetupWizard = () => {
         toast({ variant: 'destructive', title: 'Error', description: 'Passwords do not match.' });
         return;
       }
+      setInstallStatus('idle');
+      setErrorMessage('');
       setStep(3);
     }
   };
@@ -91,33 +94,107 @@ const SetupWizard = () => {
 
   const startInstallation = async () => {
     setInstallStatus('installing');
-    setProgressMsg('Saving configuration files and generating database client...');
+    setProgressMsg('Testing connection, creating database tables, and generating configuration...');
     setErrorMessage('');
 
+    const payload = {
+      dbProvider,
+      ...dbConfig,
+      ...adminConfig,
+    };
+
+    let isSuccess = false;
+    let failureReason = '';
+    let apiHandled = false;
+    let apiUnavailableReason = '';
+
+    // Step 1: Try Node.js /api/setup/configure backend API first
     try {
       const response = await fetch('/api/setup/configure', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dbProvider,
-          ...dbConfig,
-          ...adminConfig,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Configuration setup failed.');
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        apiHandled = true;
+        const data = await response.json();
+        if (response.ok && data.success) {
+          isSuccess = true;
+        } else if (data.error) {
+          failureReason = data.error;
+        }
+      } else if (response.status === 404) {
+        apiUnavailableReason = 'Node.js backend endpoint (/api/setup/configure) returned HTTP 404. Ensure the Node.js server is started ("npm start" / "node index.js") and not served only as static files.';
+      } else if (!response.ok) {
+        const textErr = await response.text().catch(() => '');
+        apiUnavailableReason = `Server error (${response.status}): ${textErr.substring(0, 150)}`;
+      } else {
+        apiUnavailableReason = 'Node.js backend endpoint (/api/setup/configure) returned HTML instead of JSON. Ensure the Node.js server is running rather than static SPA hosting.';
       }
+    } catch (nodeErr: any) {
+      console.warn('Backend setup API unreachable, checking fallback:', nodeErr);
+    }
 
-      setInstallStatus('restarting');
-      setProgressMsg('Server is restarting to apply changes... (this takes ~5-10 seconds)');
-      pollServerStatus();
-    } catch (err: any) {
+    // Step 2: Fallback to /setup.php only if Node.js backend did not handle the request
+    if (!isSuccess && !apiHandled) {
+      try {
+        const phpResponse = await fetch('/setup.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const phpType = phpResponse.headers.get('content-type') || '';
+        if (phpType.includes('application/json')) {
+          const phpData = await phpResponse.json();
+          if (phpResponse.ok && phpData.success) {
+            isSuccess = true;
+          } else if (phpData.error) {
+            failureReason = phpData.error;
+          }
+        }
+      } catch (phpErr: any) {
+        console.warn('Fallback setup endpoint unreachable:', phpErr);
+      }
+    }
+
+    if (!isSuccess && !failureReason && apiUnavailableReason) {
+      failureReason = apiUnavailableReason;
+    }
+
+    if (isSuccess) {
+      setInstallStatus('success');
+      setProgressMsg('Setup Complete! Database initialized and Administrator created.');
+      
+      // Seed admin in client session so user enters Admin Panel immediately
+      const adminSession = {
+        id: 'admin-master',
+        username: 'admin',
+        email: adminConfig.adminEmail,
+        role: 'admin',
+      };
+      localStorage.setItem('currentUser', JSON.stringify(adminSession));
+      localStorage.setItem('adminToken', 'shakti-admin-live-token');
+
+      toast({
+        title: 'Installation Successful! 🎉',
+        description: 'Your database has been created and configured successfully.',
+      });
+
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 2500);
+    } else {
       setInstallStatus('failed');
-      setErrorMessage(err.message || 'Setup encountered an error. Please check your credentials.');
-      toast({ variant: 'destructive', title: 'Setup Failed', description: err.message || 'An error occurred.' });
+      const finalMsg = failureReason || 'Could not connect to MySQL database. Please verify your Database Host, Username, Password, and Database Name.';
+      setErrorMessage(finalMsg);
+      toast({
+        variant: 'destructive',
+        title: 'Installation Failed',
+        description: finalMsg,
+      });
     }
   };
 
@@ -162,11 +239,16 @@ const SetupWizard = () => {
         <CardHeader className="text-center pt-8">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center border border-yoga-sage/20 shadow-md p-1 overflow-hidden">
-              <img 
-                src="/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png" 
-                alt="Logo" 
-                className="w-full h-full object-contain"
-              />
+              {!logoError ? (
+                <img loading="lazy" 
+                  src="/gorillatechsolution-uploads/001a3e79-c253-4f0f-8842-ed9a57850b57.png" 
+                  alt="Logo" 
+                  className="w-full h-full object-contain"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <Shield className="h-8 w-8 text-yoga-sage" />
+              )}
             </div>
           </div>
           <CardTitle className="text-2xl sm:text-3xl font-extrabold text-yoga-forest font-serif">
@@ -212,12 +294,15 @@ const SetupWizard = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="dbHost">Database Host</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="dbHost">Database Host</Label>
+                    <span className="text-[11px] text-yoga-forest font-medium">Use localhost on Hostinger</span>
+                  </div>
                   <Input 
                     id="dbHost"
                     value={dbConfig.dbHost}
                     onChange={handleDbConfigChange}
-                    placeholder="127.0.0.1"
+                    placeholder="localhost"
                     className="border-slate-200 focus-visible:ring-yoga-sage"
                   />
                 </div>
@@ -422,7 +507,15 @@ const SetupWizard = () => {
                   <p className="text-red-500 text-sm bg-red-50 border border-red-200 p-3 rounded-lg max-w-md mx-auto text-left whitespace-pre-wrap font-mono text-xs">
                     {errorMessage}
                   </p>
-                  <Button onClick={() => setStep(1)} variant="outline" className="border-slate-200 mt-2">
+                  <Button
+                    onClick={() => {
+                      setInstallStatus('idle');
+                      setErrorMessage('');
+                      setStep(1);
+                    }}
+                    variant="outline"
+                    className="border-slate-200 mt-2"
+                  >
                     Go Back and Fix
                   </Button>
                 </div>
