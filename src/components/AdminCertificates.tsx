@@ -828,7 +828,7 @@ const AdminCertificates = () => {
           </DialogHeader>
 
           {previewCert && (
-            <div className="pt-2 flex justify-center">
+            <div className="pt-2 flex flex-col items-center w-full">
               <div 
                 className="w-full max-w-[540px] aspect-[210/297] rounded-lg shadow-xl relative overflow-hidden bg-no-repeat bg-center bg-white border border-slate-300"
                 style={{
@@ -940,17 +940,17 @@ const AdminCertificates = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
+              <div className="flex items-center justify-end w-full max-w-[540px] gap-2 mt-4 pt-3 border-t">
+                <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(false)} className="h-8 text-xs px-3">
                   Close
                 </Button>
                 <a 
                   href={`/yoga-certificate`} 
                   target="_blank" 
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-yoga-sage hover:bg-yoga-forest text-white rounded-md text-sm font-medium transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 h-8 bg-yoga-sage hover:bg-yoga-forest text-white rounded-md text-xs font-medium transition-colors shrink-0 whitespace-nowrap"
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                   Open Public Student View
                 </a>
               </div>

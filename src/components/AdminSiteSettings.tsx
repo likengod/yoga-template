@@ -33,7 +33,8 @@ const AdminSiteSettings = ({ defaultTab = 'general', setDefaultTab }: AdminSiteS
               ...parsed,
               siteName: data.businessName || parsed.siteName || defaultSiteSettings.siteName,
               contactEmail: data.businessEmail || parsed.contactEmail || defaultSiteSettings.contactEmail,
-              contactPhone: data.businessPhone || parsed.contactPhone || defaultSiteSettings.contactPhone
+              contactPhone: data.businessPhone || parsed.contactPhone || defaultSiteSettings.contactPhone,
+              locations: Array.isArray(parsed.locations) ? parsed.locations : defaultSiteSettings.locations
             });
           } catch (e) {
             setSettings(prev => ({
@@ -47,14 +48,28 @@ const AdminSiteSettings = ({ defaultTab = 'general', setDefaultTab }: AdminSiteS
           // Fallback to localStorage
           const stored = localStorage.getItem('siteSettings');
           if (stored) {
-            setSettings({ ...defaultSiteSettings, ...JSON.parse(stored) });
+            try {
+              const parsed = JSON.parse(stored);
+              setSettings({
+                ...defaultSiteSettings,
+                ...parsed,
+                locations: Array.isArray(parsed.locations) ? parsed.locations : defaultSiteSettings.locations
+              });
+            } catch {}
           }
         }
       } catch (err) {
         console.error('Failed to load site settings from database:', err);
         const stored = localStorage.getItem('siteSettings');
         if (stored) {
-          setSettings({ ...defaultSiteSettings, ...JSON.parse(stored) });
+          try {
+            const parsed = JSON.parse(stored);
+            setSettings({
+              ...defaultSiteSettings,
+              ...parsed,
+              locations: Array.isArray(parsed.locations) ? parsed.locations : defaultSiteSettings.locations
+            });
+          } catch {}
         }
       }
     };
@@ -66,75 +81,80 @@ const AdminSiteSettings = ({ defaultTab = 'general', setDefaultTab }: AdminSiteS
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (customSettings?: SiteSettingsData, successMessage = 'Your site settings have been updated successfully on the database.') => {
+    const toSave = customSettings || settings;
     try {
       const payload = {
-        logoUrl: settings.logoUrl || '',
-        faviconUrl: settings.faviconUrl || '',
-        businessName: settings.siteName || '',
-        businessEmail: settings.contactEmail || '',
-        businessPhone: settings.contactPhone || '',
-        socialLinks: JSON.stringify(settings)
+        logoUrl: toSave.logoUrl || '',
+        faviconUrl: toSave.faviconUrl || '',
+        businessName: toSave.siteName || '',
+        businessEmail: toSave.contactEmail || '',
+        businessPhone: toSave.contactPhone || '',
+        socialLinks: JSON.stringify(toSave)
       };
       
       await siteSettingsService.updateSettings(payload);
 
-      localStorage.setItem('siteSettings', JSON.stringify(settings));
+      localStorage.setItem('siteSettings', JSON.stringify(toSave));
       window.dispatchEvent(new Event('siteSettingsUpdated'));
       
       // Update Meta tags for SEO globally
-      document.title = settings.siteName;
+      if (toSave.siteName) document.title = toSave.siteName;
       let metaDescription = document.querySelector('meta[name="description"]');
-      if (!metaDescription) {
+      if (!metaDescription && toSave.metaDescription) {
         metaDescription = document.createElement('meta');
         metaDescription.setAttribute('name', 'description');
         document.head.appendChild(metaDescription);
       }
-      metaDescription.setAttribute('content', settings.metaDescription);
+      if (metaDescription && toSave.metaDescription) {
+        metaDescription.setAttribute('content', toSave.metaDescription);
+      }
       
       let ogTitle = document.querySelector('meta[property="og:title"]');
-      if (ogTitle) ogTitle.setAttribute('content', settings.siteName);
+      if (ogTitle && toSave.siteName) ogTitle.setAttribute('content', toSave.siteName);
       
       let ogDesc = document.querySelector('meta[property="og:description"]');
-      if (ogDesc) ogDesc.setAttribute('content', settings.metaDescription);
+      if (ogDesc && toSave.metaDescription) ogDesc.setAttribute('content', toSave.metaDescription);
 
       let googleVerification = document.querySelector('meta[name="google-site-verification"]');
-      if (settings.googleSiteVerification) {
+      if (toSave.googleSiteVerification) {
         if (!googleVerification) {
           googleVerification = document.createElement('meta');
           googleVerification.setAttribute('name', 'google-site-verification');
           document.head.appendChild(googleVerification);
         }
-        googleVerification.setAttribute('content', settings.googleSiteVerification);
+        googleVerification.setAttribute('content', toSave.googleSiteVerification);
       } else if (googleVerification) {
         googleVerification.remove();
       }
 
       let bingVerification = document.querySelector('meta[name="msvalidate.01"]');
-      if (settings.bingSiteVerification) {
+      if (toSave.bingSiteVerification) {
         if (!bingVerification) {
           bingVerification = document.createElement('meta');
           bingVerification.setAttribute('name', 'msvalidate.01');
           document.head.appendChild(bingVerification);
         }
-        bingVerification.setAttribute('content', settings.bingSiteVerification);
+        bingVerification.setAttribute('content', toSave.bingSiteVerification);
       } else if (bingVerification) {
         bingVerification.remove();
       }
 
       toast({
         title: 'Settings Saved',
-        description: 'Your site settings have been updated successfully on the database.',
+        description: successMessage,
       });
+      return true;
     } catch (err) {
       console.error('Failed to save site settings to database:', err);
       toast({
         variant: "destructive",
-        title: "Save Failed",
-        description: "Could not save settings to database. Saved locally instead."
+        title: "Saved Locally",
+        description: "Could not save settings to database server. Saved locally instead."
       });
-      localStorage.setItem('siteSettings', JSON.stringify(settings));
+      localStorage.setItem('siteSettings', JSON.stringify(toSave));
       window.dispatchEvent(new Event('siteSettingsUpdated'));
+      return false;
     }
   };
 
@@ -165,7 +185,7 @@ const AdminSiteSettings = ({ defaultTab = 'general', setDefaultTab }: AdminSiteS
         </TabsList>
 
         <TabsContent value="general" className="mt-0">
-          <GeneralSettingsTab settings={settings} handleChange={handleChange} />
+          <GeneralSettingsTab settings={settings} handleChange={handleChange} onSaveSettings={handleSave} />
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-0">

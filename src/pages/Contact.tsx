@@ -86,10 +86,14 @@ const Contact = () => {
         if (data && data.socialLinks) {
           try {
             const parsed = JSON.parse(data.socialLinks);
-            const merged = { ...defaultSiteSettings, ...parsed };
+            const merged = { 
+              ...defaultSiteSettings, 
+              ...parsed,
+              locations: Array.isArray(parsed.locations) ? parsed.locations : defaultSiteSettings.locations
+            };
             setSiteSettings(merged);
             if (merged.locations && merged.locations.length > 0) {
-              setActiveLocId(merged.locations[0].id);
+              setActiveLocId(prev => merged.locations.some(l => l.id === prev) ? prev : merged.locations[0].id);
             }
             return;
           } catch (e) {
@@ -100,27 +104,43 @@ const Contact = () => {
         // Fallback to localStorage
         const storedSettings = localStorage.getItem('siteSettings');
         if (storedSettings) {
-          const parsed = JSON.parse(storedSettings);
-          setSiteSettings({ ...defaultSiteSettings, ...parsed });
-          if (parsed.locations && parsed.locations.length > 0) {
-            setActiveLocId(parsed.locations[0].id);
-          }
+          try {
+            const parsed = JSON.parse(storedSettings);
+            const merged = { 
+              ...defaultSiteSettings, 
+              ...parsed,
+              locations: Array.isArray(parsed.locations) ? parsed.locations : defaultSiteSettings.locations
+            };
+            setSiteSettings(merged);
+            if (merged.locations && merged.locations.length > 0) {
+              setActiveLocId(prev => merged.locations.some(l => l.id === prev) ? prev : merged.locations[0].id);
+            }
+          } catch {}
         }
       } catch (e) {
         console.error("Failed to fetch settings from database in Contact page", e);
         // Fallback to localStorage
         const storedSettings = localStorage.getItem('siteSettings');
         if (storedSettings) {
-          const parsed = JSON.parse(storedSettings);
-          setSiteSettings({ ...defaultSiteSettings, ...parsed });
-          if (parsed.locations && parsed.locations.length > 0) {
-            setActiveLocId(parsed.locations[0].id);
-          }
+          try {
+            const parsed = JSON.parse(storedSettings);
+            const merged = { 
+              ...defaultSiteSettings, 
+              ...parsed,
+              locations: Array.isArray(parsed.locations) ? parsed.locations : defaultSiteSettings.locations
+            };
+            setSiteSettings(merged);
+            if (merged.locations && merged.locations.length > 0) {
+              setActiveLocId(prev => merged.locations.some(l => l.id === prev) ? prev : merged.locations[0].id);
+            }
+          } catch {}
         }
       }
     };
 
     loadSettings();
+    window.addEventListener('siteSettingsUpdated', loadSettings);
+    return () => window.removeEventListener('siteSettingsUpdated', loadSettings);
   }, []);
 
   const locationsList: LocationData[] = siteSettings.locations && siteSettings.locations.length > 0

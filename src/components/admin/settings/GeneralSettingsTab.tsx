@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Globe, Phone, Plus, Trash2, Edit2, Check, X, MapPin, Clock } from 'lucide-react';
+import { Globe, Phone, Plus, Trash2, Edit2, Check, X, MapPin, Clock, Save } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SiteSettingsData, LocationData, defaultSiteSettings } from '@/config/siteSettings';
 import ImagePicker from '../../ImagePicker';
@@ -11,14 +11,15 @@ import { Card } from '@/components/ui/card';
 interface GeneralSettingsTabProps {
   settings: SiteSettingsData;
   handleChange: (field: keyof SiteSettingsData, value: any) => void;
+  onSaveSettings?: (customSettings?: SiteSettingsData, successMessage?: string) => Promise<boolean>;
 }
 
-const GeneralSettingsTab = ({ settings, handleChange }: GeneralSettingsTabProps) => {
+const GeneralSettingsTab = ({ settings, handleChange, onSaveSettings }: GeneralSettingsTabProps) => {
   const [locations, setLocations] = useState<LocationData[]>(() => {
-    if (settings.locations && settings.locations.length > 0) {
+    if (Array.isArray(settings.locations) && settings.locations.length > 0) {
       return settings.locations;
     }
-    return [
+    return defaultSiteSettings.locations || [
       {
         id: 'default',
         name: settings.siteName || 'Mumbai Studio',
@@ -37,19 +38,38 @@ const GeneralSettingsTab = ({ settings, handleChange }: GeneralSettingsTabProps)
     ];
   });
 
+  const [isSavingLocations, setIsSavingLocations] = useState(false);
+
   useEffect(() => {
-    if (settings.locations && settings.locations.length > 0) {
+    if (Array.isArray(settings.locations)) {
       setLocations(settings.locations);
     }
   }, [settings.locations]);
 
-  const saveLocationsList = (updatedList: LocationData[]) => {
+  const saveLocationsList = async (updatedList: LocationData[], message?: string) => {
     setLocations(updatedList);
-    handleChange('locations', updatedList);
 
     // Sync first location with global settings fields for backwards compatibility
-    if (updatedList.length > 0) {
-      const first = updatedList[0];
+    const first = updatedList.length > 0 ? updatedList[0] : null;
+    const updatedSettings: SiteSettingsData = {
+      ...settings,
+      locations: updatedList,
+      ...(first ? {
+        addressStreet: first.addressStreet,
+        addressCity: first.addressCity,
+        addressState: first.addressState,
+        addressZip: first.addressZip,
+        addressCountry: first.addressCountry,
+        studioHoursWeekdays: first.studioHoursWeekdays,
+        studioHoursSaturday: first.studioHoursSaturday,
+        studioHoursSunday: first.studioHoursSunday,
+        contactPhone: first.phone,
+        contactEmail: first.email,
+      } : {})
+    };
+
+    handleChange('locations', updatedList);
+    if (first) {
       handleChange('addressStreet', first.addressStreet);
       handleChange('addressCity', first.addressCity);
       handleChange('addressState', first.addressState);
@@ -60,6 +80,19 @@ const GeneralSettingsTab = ({ settings, handleChange }: GeneralSettingsTabProps)
       handleChange('studioHoursSunday', first.studioHoursSunday);
       handleChange('contactPhone', first.phone);
       handleChange('contactEmail', first.email);
+    }
+
+    // Persist immediately to database and localStorage
+    setIsSavingLocations(true);
+    try {
+      if (onSaveSettings) {
+        await onSaveSettings(updatedSettings, message || 'Locations updated and saved successfully.');
+      } else {
+        localStorage.setItem('siteSettings', JSON.stringify(updatedSettings));
+        window.dispatchEvent(new Event('siteSettingsUpdated'));
+      }
+    } finally {
+      setIsSavingLocations(false);
     }
   };
 
@@ -119,62 +152,64 @@ const GeneralSettingsTab = ({ settings, handleChange }: GeneralSettingsTabProps)
     setIsAdding(false);
   };
 
-  const saveForm = () => {
+  const saveForm = async () => {
     if (!formName.trim()) return;
 
     if (isAdding) {
       const newLoc: LocationData = {
         id: Date.now().toString(),
-        name: formName,
-        phone: formPhone,
-        email: formEmail,
-        addressStreet: formStreet,
-        addressCity: formCity,
-        addressState: formState,
-        addressZip: formZip,
-        addressCountry: formCountry,
-        studioHoursWeekdays: formWeekdays,
-        studioHoursSaturday: formSaturday,
-        studioHoursSunday: formSunday,
-        mapUrl: formMapUrl
+        name: formName.trim(),
+        phone: formPhone.trim(),
+        email: formEmail.trim(),
+        addressStreet: formStreet.trim(),
+        addressCity: formCity.trim(),
+        addressState: formState.trim(),
+        addressZip: formZip.trim(),
+        addressCountry: formCountry.trim(),
+        studioHoursWeekdays: formWeekdays.trim(),
+        studioHoursSaturday: formSaturday.trim(),
+        studioHoursSunday: formSunday.trim(),
+        mapUrl: formMapUrl.trim()
       };
-      saveLocationsList([...locations, newLoc]);
+      await saveLocationsList([...locations, newLoc], `Location "${formName}" added and saved successfully.`);
     } else if (editingId) {
       const updatedList = locations.map(loc => {
         if (loc.id === editingId) {
           return {
             ...loc,
-            name: formName,
-            phone: formPhone,
-            email: formEmail,
-            addressStreet: formStreet,
-            addressCity: formCity,
-            addressState: formState,
-            addressZip: formZip,
-            addressCountry: formCountry,
-            studioHoursWeekdays: formWeekdays,
-            studioHoursSaturday: formSaturday,
-            studioHoursSunday: formSunday,
-            mapUrl: formMapUrl
+            name: formName.trim(),
+            phone: formPhone.trim(),
+            email: formEmail.trim(),
+            addressStreet: formStreet.trim(),
+            addressCity: formCity.trim(),
+            addressState: formState.trim(),
+            addressZip: formZip.trim(),
+            addressCountry: formCountry.trim(),
+            studioHoursWeekdays: formWeekdays.trim(),
+            studioHoursSaturday: formSaturday.trim(),
+            studioHoursSunday: formSunday.trim(),
+            mapUrl: formMapUrl.trim()
           };
         }
         return loc;
       });
-      saveLocationsList(updatedList);
+      await saveLocationsList(updatedList, `Location "${formName}" updated and saved successfully.`);
     }
 
     setEditingId(null);
     setIsAdding(false);
   };
 
-  const deleteLocation = (id: string) => {
+  const deleteLocation = async (id: string) => {
     if (locations.length <= 1) {
       alert("You must keep at least one location.");
       return;
     }
-    if (confirm(`Are you sure you want to delete this location?`)) {
+    const target = locations.find(loc => loc.id === id);
+    const targetName = target ? target.name : 'this location';
+    if (confirm(`Are you sure you want to delete "${targetName}"? This change will be saved immediately.`)) {
       const updatedList = locations.filter(loc => loc.id !== id);
-      saveLocationsList(updatedList);
+      await saveLocationsList(updatedList, `Location "${targetName}" deleted successfully.`);
     }
   };
 
@@ -297,20 +332,34 @@ const GeneralSettingsTab = ({ settings, handleChange }: GeneralSettingsTabProps)
               </div>
 
               <div className="flex gap-2 justify-end pt-4">
-                <Button variant="outline" onClick={cancelForm}>
+                <Button variant="outline" onClick={cancelForm} disabled={isSavingLocations}>
                   Cancel
                 </Button>
-                <Button onClick={saveForm} className="bg-yoga-sage hover:bg-yoga-forest text-white" disabled={!formName.trim()}>
-                  Save Location
+                <Button onClick={saveForm} className="bg-yoga-sage hover:bg-yoga-forest text-white" disabled={!formName.trim() || isSavingLocations}>
+                  <Save size={14} className="mr-1" />
+                  {isSavingLocations ? 'Saving...' : 'Save Location'}
                 </Button>
               </div>
             </div>
           ) : (
             /* Locations List view */
             <div className="space-y-4 max-w-4xl">
-              <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-sm text-yoga-forest">Configured Locations</h4>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="font-semibold text-sm text-yoga-forest">Configured Locations ({locations.length})</h4>
+                  <p className="text-xs text-yoga-forest/60">Locations are automatically saved to the database on add, edit, or delete.</p>
+                </div>
                 <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => saveLocationsList(locations, 'Locations saved successfully.')}
+                    disabled={isSavingLocations}
+                    size="sm"
+                    variant="outline"
+                    className="border-yoga-sage text-yoga-forest hover:bg-yoga-sage/10 text-xs h-9"
+                  >
+                    <Save size={14} className="mr-1" /> {isSavingLocations ? 'Saving...' : 'Save Locations'}
+                  </Button>
                   <Button type="button" onClick={startAdd} size="sm" className="bg-yoga-sage hover:bg-yoga-forest text-white text-xs h-9">
                     <Plus size={14} className="mr-1" /> Add Location
                   </Button>

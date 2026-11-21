@@ -25,62 +25,91 @@ interface SEOData {
   favicon: string;
 }
 
-const AdminSEO = () => {
-  const { toast } = useToast();
-  
-  const [seoData, setSeoData] = useState<SEOData>({
-    siteName: 'SHAKTI YOGA THEME',
-    siteDescription: 'Transform your life through authentic yoga practice with expert guidance and personalized programs.',
-    siteKeywords: 'yoga, meditation, kundalini, spiritual growth, yoga teacher training, wellness, mindfulness',
-    author: 'SHAKTI YOGA THEME',
-    language: 'en',
-    ogTitle: 'SHAKTI YOGA THEME - Transform Your Life Through Yoga',
-    ogDescription: 'Discover authentic yoga practices and spiritual transformation with our expert-guided programs.',
-    ogImage: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
-    twitterCard: 'summary_large_image',
-    twitterSite: '@shaktiyogaraai',
-    robotsTxt: `User-agent: *
+const defaultSEOData: SEOData = {
+  siteName: 'SHAKTI YOGA THEME',
+  siteDescription: 'Transform your life through authentic yoga practice with expert guidance and personalized programs.',
+  siteKeywords: 'yoga, meditation, kundalini, spiritual growth, yoga teacher training, wellness, mindfulness',
+  author: 'SHAKTI YOGA THEME',
+  language: 'en',
+  ogTitle: 'SHAKTI YOGA THEME - Transform Your Life Through Yoga',
+  ogDescription: 'Discover authentic yoga practices and spiritual transformation with our expert-guided programs.',
+  ogImage: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80',
+  twitterCard: 'summary_large_image',
+  twitterSite: '@shaktiyogaraai',
+  robotsTxt: `User-agent: *
 Allow: /
 
 Sitemap: https://yourdomain.com/sitemap.xml`,
-    favicon: '/favicon.ico'
-  });
+  favicon: '/favicon.ico'
+};
+
+const AdminSEO = () => {
+  const { toast } = useToast();
+  
+  const [seoData, setSeoData] = useState<SEOData>(defaultSEOData);
 
   // Load SEO data from database on mount
   useEffect(() => {
     const loadSEO = async () => {
       try {
         const settings = await seoSettingsService.getSettings();
-        if (settings && settings.keywords) {
-          try {
-            const parsed = JSON.parse(settings.keywords);
-            setSeoData({
-              ...parsed,
-              siteName: settings.title || parsed.siteName,
-              siteDescription: settings.description || parsed.siteDescription,
-              robotsTxt: settings.robotsTxt || parsed.robotsTxt
-            });
-          } catch (e) {
-            setSeoData(prev => ({
-              ...prev,
-              siteName: settings.title || prev.siteName,
-              siteDescription: settings.description || prev.siteDescription,
-              robotsTxt: settings.robotsTxt || prev.robotsTxt,
-              siteKeywords: settings.keywords || prev.siteKeywords
-            }));
+        if (settings) {
+          let parsed: Partial<SEOData> = {};
+          if (settings.keywords) {
+            try {
+              const p = JSON.parse(settings.keywords);
+              if (p && typeof p === 'object') {
+                parsed = p;
+              }
+            } catch {
+              parsed = { siteKeywords: settings.keywords };
+            }
           }
+          setSeoData(prev => ({
+            ...defaultSEOData,
+            ...prev,
+            ...parsed,
+            siteName: settings.title || parsed.siteName || prev.siteName || defaultSEOData.siteName,
+            siteDescription: settings.description || parsed.siteDescription || prev.siteDescription || defaultSEOData.siteDescription,
+            robotsTxt: settings.robotsTxt || parsed.robotsTxt || prev.robotsTxt || defaultSEOData.robotsTxt,
+            siteKeywords: (typeof parsed.siteKeywords === 'string' ? parsed.siteKeywords : '') || settings.keywords || prev.siteKeywords || defaultSEOData.siteKeywords,
+          }));
         } else {
           // Fallback to localStorage
           const storedSEOData = localStorage.getItem('seoData');
           if (storedSEOData) {
-            setSeoData(JSON.parse(storedSEOData));
+            try {
+              const parsed = JSON.parse(storedSEOData);
+              if (parsed && typeof parsed === 'object') {
+                setSeoData(prev => ({
+                  ...defaultSEOData,
+                  ...prev,
+                  ...parsed,
+                  siteDescription: parsed.siteDescription ?? prev.siteDescription ?? defaultSEOData.siteDescription
+                }));
+              }
+            } catch (e) {
+              console.warn('Failed to parse localStorage seoData:', e);
+            }
           }
         }
       } catch (err) {
         console.error('Failed to load SEO settings from database:', err);
         const storedSEOData = localStorage.getItem('seoData');
         if (storedSEOData) {
-          setSeoData(JSON.parse(storedSEOData));
+          try {
+            const parsed = JSON.parse(storedSEOData);
+            if (parsed && typeof parsed === 'object') {
+              setSeoData(prev => ({
+                ...defaultSEOData,
+                ...prev,
+                ...parsed,
+                siteDescription: parsed.siteDescription ?? prev.siteDescription ?? defaultSEOData.siteDescription
+              }));
+            }
+          } catch (e) {
+            console.warn('Failed to parse localStorage seoData:', e);
+          }
         }
       }
     };
@@ -110,7 +139,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
               <Label htmlFor="siteName">Site Name</Label>
               <Input
                 id="siteName"
-                value={seoData.siteName}
+                value={seoData.siteName || ''}
                 onChange={(e) => handleInputChange('siteName', e.target.value)}
                 placeholder="Your site name"
                 className="mt-1"
@@ -121,7 +150,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
               <Label htmlFor="author">Author</Label>
               <Input
                 id="author"
-                value={seoData.author}
+                value={seoData.author || ''}
                 onChange={(e) => handleInputChange('author', e.target.value)}
                 placeholder="Author name"
                 className="mt-1"
@@ -133,14 +162,14 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
             <Label htmlFor="siteDescription">Site Description</Label>
             <Textarea
               id="siteDescription"
-              value={seoData.siteDescription}
+              value={seoData.siteDescription || ''}
               onChange={(e) => handleInputChange('siteDescription', e.target.value)}
               placeholder="Brief description of your site (160 characters max)"
               className="mt-1"
               rows={3}
             />
             <p className="text-sm text-gray-500 mt-1">
-              {seoData.siteDescription.length}/160 characters
+              {(seoData.siteDescription || '').length}/160 characters
             </p>
           </div>
           
@@ -148,7 +177,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
             <Label htmlFor="siteKeywords">Keywords</Label>
             <Input
               id="siteKeywords"
-              value={seoData.siteKeywords}
+              value={seoData.siteKeywords || ''}
               onChange={(e) => handleInputChange('siteKeywords', e.target.value)}
               placeholder="keyword1, keyword2, keyword3"
               className="mt-1"
@@ -159,7 +188,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
             <Label htmlFor="language">Language</Label>
             <Input
               id="language"
-              value={seoData.language}
+              value={seoData.language || ''}
               onChange={(e) => handleInputChange('language', e.target.value)}
               placeholder="en"
               className="mt-1"
@@ -184,7 +213,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
             <Label htmlFor="ogTitle">Open Graph Title</Label>
             <Input
               id="ogTitle"
-              value={seoData.ogTitle}
+              value={seoData.ogTitle || ''}
               onChange={(e) => handleInputChange('ogTitle', e.target.value)}
               placeholder="Title for social media sharing"
               className="mt-1"
@@ -195,7 +224,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
             <Label htmlFor="ogDescription">Open Graph Description</Label>
             <Textarea
               id="ogDescription"
-              value={seoData.ogDescription}
+              value={seoData.ogDescription || ''}
               onChange={(e) => handleInputChange('ogDescription', e.target.value)}
               placeholder="Description for social media sharing"
               className="mt-1"
@@ -208,7 +237,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
             <div className="mt-1">
               <ImagePicker
                 id="ogImage"
-                value={seoData.ogImage}
+                value={seoData.ogImage || ''}
                 onChange={(val) => handleInputChange('ogImage', val)}
                 placeholder="https://example.com/image.jpg"
               />
@@ -220,7 +249,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
               <Label htmlFor="twitterCard">Twitter Card Type</Label>
               <Input
                 id="twitterCard"
-                value={seoData.twitterCard}
+                value={seoData.twitterCard || ''}
                 onChange={(e) => handleInputChange('twitterCard', e.target.value)}
                 placeholder="summary_large_image"
                 className="mt-1"
@@ -231,7 +260,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
               <Label htmlFor="twitterSite">Twitter Site Handle</Label>
               <Input
                 id="twitterSite"
-                value={seoData.twitterSite}
+                value={seoData.twitterSite || ''}
                 onChange={(e) => handleInputChange('twitterSite', e.target.value)}
                 placeholder="@yourhandle"
                 className="mt-1"
@@ -257,7 +286,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
             <Label htmlFor="robotsTxt">Robots.txt Content</Label>
             <Textarea
               id="robotsTxt"
-              value={seoData.robotsTxt}
+              value={seoData.robotsTxt || ''}
               onChange={(e) => handleInputChange('robotsTxt', e.target.value)}
               placeholder="Enter robots.txt content"
               className="mt-1 font-mono"
@@ -302,12 +331,21 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
 
   async function handleSaveSEO() {
     try {
+      const safeData: SEOData = {
+        ...defaultSEOData,
+        ...seoData,
+        siteName: seoData.siteName || defaultSEOData.siteName,
+        siteDescription: seoData.siteDescription || defaultSEOData.siteDescription,
+        siteKeywords: seoData.siteKeywords || defaultSEOData.siteKeywords,
+        robotsTxt: seoData.robotsTxt || defaultSEOData.robotsTxt
+      };
+
       // Save to database
       const payload = {
-        title: seoData.siteName,
-        description: seoData.siteDescription,
-        keywords: JSON.stringify(seoData),
-        robotsTxt: seoData.robotsTxt,
+        title: safeData.siteName,
+        description: safeData.siteDescription,
+        keywords: JSON.stringify(safeData),
+        robotsTxt: safeData.robotsTxt,
         sitemapXml: `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -340,7 +378,7 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
       await seoSettingsService.updateSettings(payload);
       
       // Save to localStorage as local fallback
-      localStorage.setItem('seoData', JSON.stringify(seoData));
+      localStorage.setItem('seoData', JSON.stringify(safeData));
       
       // Update document meta tags immediately
       updateMetaTags();
@@ -364,25 +402,26 @@ Sitemap: https://yourdomain.com/sitemap.xml`,
   }
 
   function updateMetaTags() {
+    const data = { ...defaultSEOData, ...seoData };
     // Update existing meta tags or create new ones
-    updateMetaTag('description', seoData.siteDescription);
-    updateMetaTag('keywords', seoData.siteKeywords);
-    updateMetaTag('author', seoData.author);
-    updateMetaTag('og:title', seoData.ogTitle);
-    updateMetaTag('og:description', seoData.ogDescription);
-    updateMetaTag('og:image', seoData.ogImage);
-    updateMetaTag('og:site_name', seoData.siteName);
-    updateMetaTag('twitter:card', seoData.twitterCard);
-    updateMetaTag('twitter:site', seoData.twitterSite);
-    updateMetaTag('twitter:title', seoData.ogTitle);
-    updateMetaTag('twitter:description', seoData.ogDescription);
-    updateMetaTag('twitter:image', seoData.ogImage);
+    updateMetaTag('description', data.siteDescription || '');
+    updateMetaTag('keywords', data.siteKeywords || '');
+    updateMetaTag('author', data.author || '');
+    updateMetaTag('og:title', data.ogTitle || '');
+    updateMetaTag('og:description', data.ogDescription || '');
+    updateMetaTag('og:image', data.ogImage || '');
+    updateMetaTag('og:site_name', data.siteName || '');
+    updateMetaTag('twitter:card', data.twitterCard || '');
+    updateMetaTag('twitter:site', data.twitterSite || '');
+    updateMetaTag('twitter:title', data.ogTitle || '');
+    updateMetaTag('twitter:description', data.ogDescription || '');
+    updateMetaTag('twitter:image', data.ogImage || '');
     
     // Update document title
-    document.title = seoData.siteName;
+    document.title = data.siteName || defaultSEOData.siteName;
     
     // Update language
-    document.documentElement.lang = seoData.language;
+    document.documentElement.lang = data.language || 'en';
   }
 
   function updateMetaTag(name: string, content: string) {
