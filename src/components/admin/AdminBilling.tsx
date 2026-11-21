@@ -150,8 +150,9 @@ export const AdminBilling: React.FC = () => {
         const q = searchQuery.toLowerCase();
         const matchesNum = inv.invoice_number?.toLowerCase().includes(q);
         const matchesName = inv.customer_name?.toLowerCase().includes(q);
+        const matchesCompany = inv.customer_company?.toLowerCase().includes(q);
         const matchesEmail = inv.customer_email?.toLowerCase().includes(q);
-        if (!matchesNum && !matchesName && !matchesEmail) return false;
+        if (!matchesNum && !matchesName && !matchesCompany && !matchesEmail) return false;
       }
 
       // Status
@@ -621,7 +622,16 @@ export const AdminBilling: React.FC = () => {
                             {invoice.invoice_number}
                           </td>
                           <td className="py-3.5 px-4">
-                            <div className="font-bold text-slate-900">{invoice.customer_name}</div>
+                            {invoice.customer_company ? (
+                              <>
+                                <div className="font-bold text-slate-900">{invoice.customer_company}</div>
+                                {invoice.customer_name && (
+                                  <div className="text-slate-600 text-[11px] font-medium">{invoice.customer_name}</div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="font-bold text-slate-900">{invoice.customer_name}</div>
+                            )}
                             <div className="text-slate-500 text-[11px] font-normal">{invoice.customer_email}</div>
                           </td>
                           <td className="py-3.5 px-4 text-[11px] space-y-0.5">

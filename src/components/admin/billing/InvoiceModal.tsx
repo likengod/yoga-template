@@ -37,13 +37,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const [formData, setFormData] = useState<Partial<InvoiceData>>({
     invoice_number: generateInvoiceNumber(),
     customer_name: '',
+    customer_company: '',
     customer_email: '',
     customer_phone: '',
     customer_address: '',
     customer_city: '',
-    customer_state: 'Tripura',
-    customer_zip: '799001',
-    customer_country: 'India',
+    customer_state: '',
+    customer_zip: '',
+    customer_country: '',
     issue_date: todayStr,
     due_date: dueDateStr,
     status: 'pending',
@@ -59,14 +60,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       setFormData({
         id: invoice.id,
         invoice_number: invoice.invoice_number,
-        customer_name: invoice.customer_name,
-        customer_email: invoice.customer_email,
+        customer_name: invoice.customer_name || '',
+        customer_company: invoice.customer_company || '',
+        customer_email: invoice.customer_email || '',
         customer_phone: invoice.customer_phone || '',
         customer_address: invoice.customer_address || '',
         customer_city: invoice.customer_city || '',
-        customer_state: invoice.customer_state || 'Tripura',
+        customer_state: invoice.customer_state || '',
         customer_zip: invoice.customer_zip || '',
-        customer_country: invoice.customer_country || 'India',
+        customer_country: invoice.customer_country || '',
         issue_date: invoice.issue_date?.split('T')[0] || todayStr,
         due_date: invoice.due_date?.split('T')[0] || dueDateStr,
         status: invoice.status || 'pending',
@@ -85,13 +87,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       setFormData({
         invoice_number: generateInvoiceNumber(),
         customer_name: '',
+        customer_company: '',
         customer_email: '',
         customer_phone: '',
         customer_address: '',
         customer_city: '',
-        customer_state: 'Tripura',
-        customer_zip: '799001',
-        customer_country: 'India',
+        customer_state: '',
+        customer_zip: '',
+        customer_country: '',
         issue_date: todayStr,
         due_date: dueDateStr,
         status: 'pending',
@@ -149,8 +152,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.customer_name || !formData.customer_email) {
-      toast({ title: "Customer details missing", description: "Name and email are required.", variant: "destructive" });
+    if ((!formData.customer_name?.trim() && !formData.customer_company?.trim()) || !formData.customer_email?.trim()) {
+      toast({ title: "Customer details missing", description: "Customer name or company name, and email are required.", variant: "destructive" });
       return;
     }
 
@@ -159,14 +162,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       const payload: InvoiceData = {
         id: formData.id,
         invoice_number: formData.invoice_number || generateInvoiceNumber(),
-        customer_name: formData.customer_name,
-        customer_email: formData.customer_email,
-        customer_phone: formData.customer_phone,
-        customer_address: formData.customer_address,
-        customer_city: formData.customer_city,
-        customer_state: formData.customer_state,
-        customer_zip: formData.customer_zip,
-        customer_country: formData.customer_country,
+        customer_name: formData.customer_name?.trim() || formData.customer_company?.trim() || '',
+        customer_company: formData.customer_company?.trim() || '',
+        customer_email: formData.customer_email?.trim() || '',
+        customer_phone: formData.customer_phone?.trim() || '',
+        customer_address: formData.customer_address?.trim() || '',
+        customer_city: formData.customer_city?.trim() || '',
+        customer_state: formData.customer_state?.trim() || '',
+        customer_zip: formData.customer_zip?.trim() || '',
+        customer_country: formData.customer_country?.trim() || '',
         issue_date: formData.issue_date || todayStr,
         due_date: formData.due_date || dueDateStr,
         status: (formData.status as any) || 'pending',
@@ -275,66 +279,104 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           <div>
             <div className="flex items-center space-x-2 text-slate-800 font-bold text-sm mb-3">
               <User className="w-4 h-4 text-slate-600" />
-              <span>Customer Information</span>
+              <span>Customer & Company Information</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <Label className="text-xs text-slate-600">Customer / Company Name</Label>
-                <Input
-                  className="mt-1"
-                  value={formData.customer_name}
-                  onChange={(e) => handleFieldChange('customer_name', e.target.value)}
-                  placeholder="e.g. Hard Rock"
-                  required
-                />
+            <div className="space-y-3">
+              {/* Row 1: Customer Name & Company / Org Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-slate-600">Customer Name (Contact Person)</Label>
+                  <Input
+                    className="mt-1"
+                    value={formData.customer_name || ''}
+                    onChange={(e) => handleFieldChange('customer_name', e.target.value)}
+                    placeholder="e.g. S. Kupetiene"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-600">Company / Organization Name</Label>
+                  <Input
+                    className="mt-1"
+                    value={formData.customer_company || ''}
+                    onChange={(e) => handleFieldChange('customer_company', e.target.value)}
+                    placeholder="e.g. Ananda veda MB"
+                  />
+                </div>
               </div>
-              <div>
-                <Label className="text-xs text-slate-600">Email Address</Label>
-                <Input
-                  type="email"
-                  className="mt-1"
-                  value={formData.customer_email}
-                  onChange={(e) => handleFieldChange('customer_email', e.target.value)}
-                  placeholder="info@example.com"
-                  required
-                />
+
+              {/* Row 2: Email & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-slate-600">Email Address <span className="text-rose-500">*</span></Label>
+                  <Input
+                    type="email"
+                    className="mt-1"
+                    value={formData.customer_email || ''}
+                    onChange={(e) => handleFieldChange('customer_email', e.target.value)}
+                    placeholder="customer@example.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-600">Phone</Label>
+                  <Input
+                    className="mt-1"
+                    value={formData.customer_phone || ''}
+                    onChange={(e) => handleFieldChange('customer_phone', e.target.value)}
+                    placeholder="+37062200744"
+                  />
+                </div>
               </div>
+
+              {/* Row 3: Street Address */}
               <div>
-                <Label className="text-xs text-slate-600">Phone</Label>
+                <Label className="text-xs text-slate-600">Street Address</Label>
                 <Input
                   className="mt-1"
-                  value={formData.customer_phone}
-                  onChange={(e) => handleFieldChange('customer_phone', e.target.value)}
-                  placeholder="7085259671"
+                  value={formData.customer_address || ''}
+                  onChange={(e) => handleFieldChange('customer_address', e.target.value)}
+                  placeholder="Street address, building, suite / flat no."
                 />
               </div>
 
-              <div>
-                <Label className="text-xs text-slate-600">City</Label>
-                <Input
-                  className="mt-1"
-                  value={formData.customer_city}
-                  onChange={(e) => handleFieldChange('customer_city', e.target.value)}
-                  placeholder="Agartala"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-slate-600">State / Region</Label>
-                <Input
-                  className="mt-1"
-                  value={formData.customer_state}
-                  onChange={(e) => handleFieldChange('customer_state', e.target.value)}
-                  placeholder="Tripura"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-slate-600">ZIP Code</Label>
-                <Input
-                  className="mt-1"
-                  value={formData.customer_zip}
-                  onChange={(e) => handleFieldChange('customer_zip', e.target.value)}
-                  placeholder="799001"
-                />
+              {/* Row 4: City, State/Region, ZIP, Country */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-xs text-slate-600">City</Label>
+                  <Input
+                    className="mt-1"
+                    value={formData.customer_city || ''}
+                    onChange={(e) => handleFieldChange('customer_city', e.target.value)}
+                    placeholder="e.g. Alytus"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-600">State / Region</Label>
+                  <Input
+                    className="mt-1"
+                    value={formData.customer_state || ''}
+                    onChange={(e) => handleFieldChange('customer_state', e.target.value)}
+                    placeholder="e.g. Alytus County"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-600">ZIP / Postal Code</Label>
+                  <Input
+                    className="mt-1"
+                    value={formData.customer_zip || ''}
+                    onChange={(e) => handleFieldChange('customer_zip', e.target.value)}
+                    placeholder="e.g. 62105"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-600">Country</Label>
+                  <Input
+                    className="mt-1"
+                    value={formData.customer_country || ''}
+                    onChange={(e) => handleFieldChange('customer_country', e.target.value)}
+                    placeholder="e.g. Lithuania or India"
+                  />
+                </div>
               </div>
             </div>
           </div>

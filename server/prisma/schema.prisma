@@ -326,6 +326,7 @@ model Invoice {
   id               String   @id @default(uuid())
   invoice_number   String   @unique
   customer_name    String
+  customer_company String?
   customer_email   String
   customer_phone   String?
   customer_address String?

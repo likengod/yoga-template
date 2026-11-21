@@ -1951,6 +1951,7 @@ invoicesRouter.post('/', authenticateToken, async (req, res) => {
     } catch {
       saved = newInvoice;
       fallbackInvoices.unshift(saved);
+      saveFallbackInvoices();
     }
     res.status(201).json(saved);
   } catch (error) {
@@ -1979,6 +1980,7 @@ invoicesRouter.put('/:id', authenticateToken, async (req, res) => {
         updated = { id: req.params.id, ...updateData };
         fallbackInvoices.unshift(updated);
       }
+      saveFallbackInvoices();
     }
     res.json(updated);
   } catch (error) {

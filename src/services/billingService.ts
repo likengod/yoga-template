@@ -12,6 +12,7 @@ export interface InvoiceData {
   id?: string;
   invoice_number: string;
   customer_name: string;
+  customer_company?: string;
   customer_email: string;
   customer_phone?: string;
   customer_address?: string;

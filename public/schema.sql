@@ -339,6 +339,7 @@ CREATE TABLE IF NOT EXISTS `invoices` (
     `id` VARCHAR(191) NOT NULL,
     `invoice_number` VARCHAR(191) NOT NULL,
     `customer_name` VARCHAR(191) NOT NULL,
+    `customer_company` VARCHAR(191) NULL,
     `customer_email` VARCHAR(191) NOT NULL,
     `customer_phone` VARCHAR(191) NULL,
     `customer_address` VARCHAR(191) NULL,

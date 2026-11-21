@@ -348,20 +348,47 @@ ${verificationUrl}`;
               {/* Bill To */}
               <div className="text-left sm:text-right">
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">BILL TO</div>
-                <div className="font-bold text-slate-900 text-sm sm:text-base uppercase">{invoice.customer_name}</div>
+                {invoice.customer_company ? (
+                  <>
+                    <div className="font-bold text-slate-900 text-sm sm:text-base uppercase tracking-tight">{invoice.customer_company}</div>
+                    {invoice.customer_name && (
+                      <div className="text-xs font-semibold text-slate-700 mt-0.5">{invoice.customer_name}</div>
+                    )}
+                  </>
+                ) : (
+                  <div className="font-bold text-slate-900 text-sm sm:text-base uppercase tracking-tight">{invoice.customer_name}</div>
+                )}
                 <div className="mt-1.5 space-y-0.5 text-slate-600 text-xs sm:flex sm:flex-col sm:items-end">
-                  <div className="flex items-center gap-2">
-                    <span>{invoice.customer_city || invoice.customer_address || 'AGARTALA'}</span>
-                    <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>{invoice.customer_zip ? `${invoice.customer_zip}, ` : ''}{invoice.customer_state || 'Tripura'}, {invoice.customer_country || 'India'}</span>
-                    <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>{invoice.customer_email}</span>
-                    <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  </div>
+                  {invoice.customer_address && (
+                    <div className="flex items-center gap-2">
+                      <span>{invoice.customer_address}</span>
+                      <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    </div>
+                  )}
+                  {(invoice.customer_city || invoice.customer_state || invoice.customer_zip) && (
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {[
+                          invoice.customer_city,
+                          invoice.customer_state,
+                          invoice.customer_zip
+                        ].filter(Boolean).join(', ')}
+                      </span>
+                      <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    </div>
+                  )}
+                  {invoice.customer_country && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-700">{invoice.customer_country}</span>
+                      <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    </div>
+                  )}
+                  {invoice.customer_email && (
+                    <div className="flex items-center gap-2">
+                      <span>{invoice.customer_email}</span>
+                      <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    </div>
+                  )}
                   {invoice.customer_phone && (
                     <div className="flex items-center gap-2">
                       <span>{invoice.customer_phone}</span>
