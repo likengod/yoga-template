@@ -1,1 +1,2 @@
-require('./server/dist/index.js');
+// Phusion Passenger / cPanel App Entrypoint
+require('./server.js');

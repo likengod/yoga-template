@@ -59,21 +59,20 @@ New-Item -ItemType Directory -Force -Path deploy_node\server | Out-Null
 
 Copy-Item -Path "dist\*" -Destination deploy_node\dist -Recurse -Force
 Remove-Item -Path deploy_node\dist\setup.php, deploy_node\dist\api.php, deploy_node\dist\.htaccess, deploy_node\dist\_redirects, deploy_node\dist\schema.sql -Force -ErrorAction SilentlyContinue
-Copy-Item -Path index.js, app.js, ecosystem.config.js, .npmrc -Destination deploy_node -Force
-Copy-Item -Path index.js -Destination deploy_node\server.js -Force
+Copy-Item -Path server.js, index.js, app.js, ecosystem.config.js, ecosystem.config.cjs, .npmrc, .env.example -Destination deploy_node -Force -ErrorAction SilentlyContinue
 Get-ChildItem -Path server -Exclude node_modules, .env | Copy-Item -Destination deploy_node\server -Recurse -Force
 Remove-Item -Path deploy_node\server\.env, deploy_node\server\prisma\dev.db -Force -ErrorAction SilentlyContinue
 
 $nodePkg = @'
 {
   "name": "shakti-yoga-app",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "private": true,
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "postinstall": "npx prisma generate --schema=server/prisma/schema.prisma",
-    "build": "npx prisma generate --schema=server/prisma/schema.prisma",
-    "start": "node index.js"
+    "postinstall": "prisma generate --schema=./server/prisma/schema.prisma",
+    "build": "prisma generate --schema=./server/prisma/schema.prisma",
+    "start": "node server.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
