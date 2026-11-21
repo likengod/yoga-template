@@ -54,7 +54,6 @@ jobs:
               npm install --legacy-peer-deps &&
               npm run build &&
               npx prisma generate &&
-              npx prisma db push --accept-data-loss &&
               cd .. &&
               rm -f public/uploads/db-debug.txt &&
               (pm2 restart shakti-yoga-server || pm2 start ecosystem.config.js) &&

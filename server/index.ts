@@ -493,13 +493,24 @@ let fallbackContactContent: any = {
   hours: { weekdays: "6:00 AM - 8:00 PM", weekends: "7:00 AM - 6:00 PM" }
 };
 
-// Configure multer for file uploads
-const projectRoot = fs.existsSync(path.join(__dirname, '../public/uploads'))
-  ? path.join(__dirname, '..')
-  : path.join(__dirname, '../..');
-const uploadDir = path.join(projectRoot, 'public/uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Configure multer for file uploads with persistent directory resolution
+const uploadCandidates = [
+  path.join(process.cwd(), 'uploads'),
+  path.join(process.cwd(), 'public/uploads'),
+  path.join(__dirname, '../public/uploads'),
+  path.join(__dirname, '../../public/uploads'),
+  path.join(__dirname, '../uploads')
+];
+
+let uploadDir = uploadCandidates.find(d => fs.existsSync(d));
+if (!uploadDir) {
+  uploadDir = path.join(process.cwd(), 'uploads');
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  } catch {
+    uploadDir = path.join(__dirname, '../uploads');
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 }
 
 const storage = multer.diskStorage({
@@ -2183,12 +2194,36 @@ app.get('/sitemap.xml', async (req, res) => {
   }
 });
 
-// Serve uploaded files statically
-const projectRootStatic = fs.existsSync(path.join(__dirname, '../public/uploads'))
-  ? path.join(__dirname, '..')
-  : path.join(__dirname, '../..');
-const publicUploadsDir = path.join(projectRootStatic, 'public/uploads');
-app.use('/uploads', express.static(publicUploadsDir));
+// Serve uploaded files statically across all candidate locations
+const staticUploadCandidates = [
+  uploadDir,
+  path.join(process.cwd(), 'uploads'),
+  path.join(process.cwd(), 'public/uploads'),
+  path.join(process.cwd(), 'dist/uploads'),
+  path.join(__dirname, '../public/uploads'),
+  path.join(__dirname, '../../public/uploads'),
+  path.join(__dirname, '../uploads'),
+  path.join(__dirname, '../../uploads')
+];
+
+for (const dir of Array.from(new Set(staticUploadCandidates))) {
+  if (fs.existsSync(dir)) {
+    app.use('/uploads', express.static(dir));
+  }
+}
+
+const gorillatechDirs = [
+  path.join(process.cwd(), 'gorillatechsolution-uploads'),
+  path.join(process.cwd(), 'public/gorillatechsolution-uploads'),
+  path.join(process.cwd(), 'dist/gorillatechsolution-uploads'),
+  path.join(__dirname, '../public/gorillatechsolution-uploads'),
+  path.join(__dirname, '../../public/gorillatechsolution-uploads')
+];
+for (const dir of Array.from(new Set(gorillatechDirs))) {
+  if (fs.existsSync(dir)) {
+    app.use('/gorillatechsolution-uploads', express.static(dir));
+  }
+}
 
 // Serve static React files in production
 const distPath = fs.existsSync(path.join(__dirname, '../dist/index.html'))

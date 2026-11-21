@@ -213,15 +213,17 @@ NODE_ENV="production"
       }
     }
 
-    // Attempt Prisma generate & push if available
+    // Attempt Prisma generate
     const cwd = fs.existsSync(path.join(process.cwd(), 'server')) ? path.join(process.cwd(), 'server') : process.cwd();
     const schemaFlag = targetSchemaPath ? ` --schema="${targetSchemaPath}"` : '';
     
     try {
       await execPromise(`npx prisma generate${schemaFlag}`, { cwd });
-      await execPromise(`npx prisma db push${schemaFlag} --accept-data-loss`, { cwd });
+      // NOTE: We deliberately do NOT run `prisma db push --accept-data-loss` here
+      // because schema.sql already handles safe non-destructive table creation with
+      // CREATE TABLE IF NOT EXISTS, preserving all existing live customer and invoice data!
     } catch (prismaErr: any) {
-      console.log('Prisma CLI execution skipped or finished with notice:', prismaErr.message || prismaErr);
+      console.log('Prisma CLI execution notice:', prismaErr.message || prismaErr);
     }
 
     // Seed admin, superadmin, and instructor users
@@ -276,15 +278,24 @@ NODE_ENV="production"
       console.log('Admin user seeding warning (non-fatal):', adminSeedError.message || adminSeedError);
     }
 
-    // Seed initial data
+    // Seed initial data only if tables are currently empty
     try {
-      console.log('Seeding initial data...');
-      await execPromise(`node seedClasses.js`, { cwd });
-      await execPromise(`node seedInstructors.js`, { cwd });
-      await execPromise(`node seed_policies.js`, { cwd });
-      await execPromise(`node seedGallery.js`, { cwd });
-      await execPromise(`node seedArticles.js`, { cwd });
-      console.log('Initial data seeded successfully.');
+      const prismaClient = new PrismaClient();
+      const existingClasses = await prismaClient.onlineClass.count().catch(() => 0);
+      const existingArticles = await prismaClient.article.count().catch(() => 0);
+      await prismaClient.$disconnect();
+
+      if (existingClasses === 0 && existingArticles === 0) {
+        console.log('Database empty: Seeding initial demo data...');
+        await execPromise(`node seedClasses.js`, { cwd }).catch(() => {});
+        await execPromise(`node seedInstructors.js`, { cwd }).catch(() => {});
+        await execPromise(`node seed_policies.js`, { cwd }).catch(() => {});
+        await execPromise(`node seedGallery.js`, { cwd }).catch(() => {});
+        await execPromise(`node seedArticles.js`, { cwd }).catch(() => {});
+        console.log('Initial data seeded successfully.');
+      } else {
+        console.log('Existing database content detected; preserving current data and skipping seed.');
+      }
     } catch (seedError: any) {
       console.log('Database seeding warning (non-fatal):', seedError.message || seedError);
     }
